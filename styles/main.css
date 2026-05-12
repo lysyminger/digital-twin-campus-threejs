@@ -1,0 +1,195 @@
+/* ============================================================
+   浙江树人学院数字孪生交互系统 · 全局样式
+   深色玻璃拟态 + 青蓝强调（#78c8ff）
+   ============================================================ */
+
+/* ===== 全局重置 ===== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  color: #e6f0fa;
+  background: #050b14;
+}
+canvas { display: block; }
+
+/* ===== 深色玻璃拟态基底 ===== */
+.glass {
+  background: rgba(12, 22, 36, 0.55);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(120, 200, 255, 0.18);
+  box-shadow: 0 8px 32px rgba(0, 10, 25, 0.45);
+  border-radius: 12px;
+}
+
+/* ===== 顶部标题栏 ===== */
+.topbar {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  padding: 10px 22px;
+  display: flex; align-items: center; gap: 14px;
+  z-index: 10;
+}
+.topbar h1 {
+  font-size: 16px; font-weight: 500; letter-spacing: 1px;
+  color: #cfe8ff;
+}
+.topbar .accent { color: #78c8ff; font-weight: 600; }
+.topbar .version {
+  font-size: 12px; color: #78c8ff;
+  padding: 2px 8px; border: 1px solid #78c8ff44; border-radius: 10px;
+}
+
+/* ===== 左侧控制面板 ===== */
+.panel-left {
+  position: fixed; top: 80px; left: 16px; width: 240px;
+  padding: 14px 16px; z-index: 10;
+}
+.panel-left h2 {
+  font-size: 13px; font-weight: 500; color: #78c8ff;
+  margin: 14px 0 8px; letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.panel-left h2:first-child { margin-top: 0; }
+.panel-left .row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 0; font-size: 13px;
+}
+.panel-left label { cursor: pointer; user-select: none; }
+
+/* ===== 自定义开关 ===== */
+.switch {
+  position: relative; width: 36px; height: 18px;
+  appearance: none; -webkit-appearance: none;
+  background: rgba(255,255,255,0.1); border-radius: 9px;
+  cursor: pointer; transition: background .2s;
+  outline: none;
+}
+.switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #b9d4ec; transition: left .2s, background .2s;
+}
+.switch:checked { background: #78c8ff66; }
+.switch:checked::after { left: 20px; background: #78c8ff; }
+
+/* ===== 按钮组 ===== */
+.btn-group { display: flex; gap: 6px; margin-top: 6px; }
+.btn {
+  flex: 1; padding: 8px 0; font-size: 12px;
+  color: #cfe8ff; background: rgba(120,200,255,0.08);
+  border: 1px solid rgba(120,200,255,0.2); border-radius: 8px;
+  cursor: pointer; transition: all .15s;
+  font-family: inherit;
+}
+.btn:hover { background: rgba(120,200,255,0.18); color: #fff; }
+.btn.active {
+  background: #78c8ff; color: #051628; font-weight: 600;
+  border-color: #78c8ff;
+}
+
+/* ===== 时间滑块 ===== */
+.time-row { margin-top: 10px; }
+.time-row .time-display {
+  font-size: 14px; color: #78c8ff; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+input[type="range"] {
+  width: 100%; margin-top: 8px;
+  -webkit-appearance: none; appearance: none;
+  background: transparent; outline: none; cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px; background: rgba(120,200,255,0.2); border-radius: 2px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 14px; height: 14px; margin-top: -5px;
+  background: #78c8ff; border-radius: 50%;
+  box-shadow: 0 0 8px #78c8ff88;
+}
+
+/* ===== 信息卡片（点击建筑时显示） ===== */
+.info-card {
+  position: fixed; top: 80px; right: 16px; width: 280px;
+  padding: 18px 20px; z-index: 10;
+  display: none;
+}
+.info-card.show { display: block; animation: slideIn .25s ease; }
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.info-card .close {
+  position: absolute; top: 10px; right: 12px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(255,255,255,0.08); border: none;
+  color: #cfe8ff; cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.info-card .close:hover { background: rgba(255,80,80,0.3); }
+.info-card h3 {
+  font-size: 16px; color: #78c8ff;
+  margin-bottom: 4px; padding-right: 24px;
+}
+.info-card .tag {
+  display: inline-block; padding: 2px 8px; margin-bottom: 10px;
+  font-size: 11px; color: #78c8ff;
+  background: rgba(120,200,255,0.12);
+  border: 1px solid rgba(120,200,255,0.3); border-radius: 10px;
+}
+.info-card p { font-size: 13px; line-height: 1.6; color: #c8d8e8; }
+
+/* ===== 小地图 ===== */
+.minimap {
+  position: fixed; bottom: 16px; right: 16px;
+  width: 180px; height: 180px;
+  padding: 8px; z-index: 10;
+}
+.minimap canvas {
+  width: 100%; height: 100%; border-radius: 6px;
+  background: rgba(0,0,0,0.3);
+}
+.minimap .label {
+  position: absolute; top: 12px; left: 14px;
+  font-size: 11px; color: #78c8ff; letter-spacing: 1px;
+}
+
+/* ===== 底部操作提示 ===== */
+.hints {
+  position: fixed; bottom: 16px; left: 16px;
+  padding: 10px 16px; font-size: 12px; color: #a8c2dc;
+  z-index: 10; line-height: 1.7;
+}
+.hints .key {
+  display: inline-block; padding: 1px 6px;
+  background: rgba(120,200,255,0.15);
+  border: 1px solid rgba(120,200,255,0.3); border-radius: 4px;
+  color: #78c8ff; font-family: monospace; font-size: 11px;
+}
+
+/* ===== FPS 显示 ===== */
+.fps {
+  position: fixed; top: 16px; left: 16px; z-index: 10;
+  padding: 6px 12px; font-size: 12px; color: #78c8ff;
+  font-family: monospace;
+}
+
+/* ===== 加载遮罩 ===== */
+.loader {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  background: #050b14; transition: opacity .4s;
+}
+.loader.hide { opacity: 0; pointer-events: none; }
+.loader-text { color: #78c8ff; font-size: 14px; letter-spacing: 2px; }
+.loader-text::after {
+  content: ''; display: inline-block; width: 0;
+  animation: dots 1.4s infinite;
+}
+@keyframes dots {
+  0%, 20% { content: ''; }
+  40% { content: '.'; }
+  60% { content: '..'; }
+  80%, 100% { content: '...'; }
+}
