@@ -71,12 +71,6 @@
     <p id="info-desc">建筑描述</p>
   </div>
 
-  <!-- ===== 小地图 ===== -->
-  <div class="minimap glass">
-    <span class="label">小地图</span>
-    <canvas id="minimap-canvas"></canvas>
-  </div>
-
   <!-- ===== 底部操作提示 ===== -->
   <div class="hints glass">
     <span class="key">左键</span> 旋转 ·
@@ -90,9 +84,10 @@
   <script src="./vendor/OrbitControls.js"></script>
 
   <!-- ===== 业务脚本（按依赖顺序加载） ===== -->
-  <script src="./js/scene.js"></script>
-  <script src="./js/factories.js"></script>
-  <script src="./js/interaction.js"></script>
+  <script src="./js/core.js"></script>
+  <script src="./js/terrain.js"></script>
+  <script src="./js/sports.js"></script>
+  <script src="./js/ui.js"></script>
   <script src="./js/minimap.js"></script>
   <script src="./js/main.js"></script>
 </body>

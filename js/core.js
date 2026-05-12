@@ -1,5 +1,5 @@
 /* ============================================================
-   场景基础：全局状态 + initScene
+   核心：全局状态 + initScene + 共用工具函数
    坐标系：1 unit ≈ 1 m  |  原点 = 贺田图书馆  |  北 = -Z，东 = +X
    依赖：vendor/three.min.js, vendor/OrbitControls.js（先加载）
    ============================================================ */
@@ -13,7 +13,7 @@ let frameCount = 0, fpsTimer = 0;
 let currentView = 'persp';                // 'persp' | 'top' | 'tour'
 
 const interactables = [];                 // 所有可点击对象
-const layerGroups = {                     // 图层分组（CAMPUS_DATA.md 第 5 节）
+const layerGroups = {                     // 图层分组
   ground:     new THREE.Group(),
   roads:      new THREE.Group(),
   buildings:  new THREE.Group(),
@@ -22,6 +22,19 @@ const layerGroups = {                     // 图层分组（CAMPUS_DATA.md 第 5
   aiModels:   new THREE.Group()
 };
 
+// ===== 共用材质工厂 =====
+// 贴地薄片材质：polygonOffset 防止 z-fighting
+// priority 越大越靠近相机：1=绿地，2=道路，3=球场/跑道，4=跑道内场
+function overlayMat(color, priority) {
+  return new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.9,
+    polygonOffset: true,
+    polygonOffsetFactor: -priority,
+    polygonOffsetUnits: -priority
+  });
+}
+
 // ===== 场景初始化 =====
 function initScene() {
   // 场景 + 雾
@@ -29,7 +42,7 @@ function initScene() {
   scene.background = new THREE.Color(0x87ceeb);
   scene.fog = new THREE.Fog(0x87ceeb, 400, 1200);
 
-  // 相机（透视）near=1（不是 0.1）以提升远距离深度缓冲精度，缓解大场景 z-fighting
+  // 相机（透视）near=1 提升远距离深度缓冲精度
   const aspect = window.innerWidth / window.innerHeight;
   camera = new THREE.PerspectiveCamera(55, aspect, 1, 2000);
   camera.position.set(260, 200, 260);
@@ -52,7 +65,7 @@ function initScene() {
   controls.dampingFactor = 0.08;
   controls.minDistance = 20;
   controls.maxDistance = 600;
-  controls.maxPolarAngle = Math.PI * 0.48;   // 不允许低于地平线
+  controls.maxPolarAngle = Math.PI * 0.48;
   controls.target.set(0, 0, 0);
 
   // 光照

@@ -1,11 +1,11 @@
 /* ============================================================
-   交互：Raycaster 点击、信息卡、UI 事件、视角切换
-   依赖：scene.js（camera, controls, renderer, raycaster, pointer, interactables, layerGroups, currentView）
+   交互与 UI：Raycaster 点击、信息卡、UI 事件、视角切换
+   依赖：core.js（camera, controls, renderer, raycaster, pointer, interactables, layerGroups, currentView）
    ============================================================ */
 
 // ===== 点击拾取 =====
 function onPointerDown(e) {
-  if (e.target.tagName !== 'CANVAS') return;       // 点击 UI 时不触发
+  if (e.target.tagName !== 'CANVAS') return;
   pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
   pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
@@ -13,7 +13,6 @@ function onPointerDown(e) {
   const hits = raycaster.intersectObjects(interactables, true);
   if (hits.length === 0) return;
 
-  // 找到最近命中的 userData（沿父级回溯）
   let obj = hits[0].object;
   while (obj && !obj.userData?.name) obj = obj.parent;
   if (!obj?.userData?.name) return;
@@ -48,7 +47,7 @@ function bindUI() {
   document.getElementById('view-tour').addEventListener('click',  () => setView('tour'));
   document.getElementById('reset-btn').addEventListener('click',  () => setView('persp'));
 
-  // 时间滑块（v0.1 仅显示数字，日夜效果在 v0.5 接入）
+  // 时间滑块
   document.getElementById('time-slider').addEventListener('input', e => {
     updateTimeDisplay(parseFloat(e.target.value));
   });
@@ -72,18 +71,17 @@ function setView(mode) {
 
   if (mode === 'persp') {
     controls.enabled = true;
-    animateCamera({ pos: [260, 200, 260], target: [0, 0, 0] });
+    animateCamera({ pos: [320, 240, 220], target: [0, 0, 0] });
   } else if (mode === 'top') {
     controls.enabled = true;
     animateCamera({ pos: [0, 480, 0.1], target: [0, 0, 0] });
   } else if (mode === 'tour') {
-    // v0.6 实现真正的漫游，v0.2 暂时切到一个低空透视位
     controls.enabled = true;
     animateCamera({ pos: [-100, 30, 200], target: [0, 5, 0] });
   }
 }
 
-// 简单的相机平滑过渡（easeInOut）
+// ===== 相机平滑过渡（easeInOut） =====
 function animateCamera({ pos, target }) {
   const fromPos = camera.position.clone();
   const fromTgt = controls.target.clone();
@@ -102,6 +100,7 @@ function animateCamera({ pos, target }) {
   requestAnimationFrame(step);
 }
 
+// ===== 时间显示 =====
 function updateTimeDisplay(hour) {
   const h = Math.floor(hour);
   const m = Math.floor((hour - h) * 60);
@@ -109,6 +108,7 @@ function updateTimeDisplay(hour) {
     String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
 }
 
+// ===== 窗口缩放 =====
 function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();

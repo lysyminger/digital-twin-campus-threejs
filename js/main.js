@@ -21,7 +21,6 @@ function animate(now) {
   }
 
   controls.update();
-  drawMinimap();
   renderer.render(scene, camera);
 }
 
@@ -35,7 +34,6 @@ function boot() {
   createBasketballCourts();
   createFootballField();
   createGreenAreas();
-  initMinimap();
   bindUI();
   updateTimeDisplay(12);
   requestAnimationFrame(animate);
