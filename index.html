@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>浙江树人学院数字孪生交互系统 · v0.1</title>
+  <style>
+    /* ===== 全局重置 ===== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body {
+      font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+      color: #e6f0fa;
+      background: #050b14;
+    }
+    canvas { display: block; }
+
+    /* ===== 深色玻璃拟态基底 ===== */
+    .glass {
+      background: rgba(12, 22, 36, 0.55);
+      backdrop-filter: blur(12px) saturate(140%);
+      -webkit-backdrop-filter: blur(12px) saturate(140%);
+      border: 1px solid rgba(120, 200, 255, 0.18);
+      box-shadow: 0 8px 32px rgba(0, 10, 25, 0.45);
+      border-radius: 12px;
+    }
+
+    /* ===== 顶部标题栏 ===== */
+    .topbar {
+      position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+      padding: 10px 22px;
+      display: flex; align-items: center; gap: 14px;
+      z-index: 10;
+    }
+    .topbar h1 {
+      font-size: 16px; font-weight: 500; letter-spacing: 1px;
+      color: #cfe8ff;
+    }
+    .topbar .accent { color: #78c8ff; font-weight: 600; }
+    .topbar .version {
+      font-size: 12px; color: #78c8ff;
+      padding: 2px 8px; border: 1px solid #78c8ff44; border-radius: 10px;
+    }
+
+    /* ===== 左侧控制面板 ===== */
+    .panel-left {
+      position: fixed; top: 80px; left: 16px; width: 240px;
+      padding: 14px 16px; z-index: 10;
+    }
+    .panel-left h2 {
+      font-size: 13px; font-weight: 500; color: #78c8ff;
+      margin: 14px 0 8px; letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .panel-left h2:first-child { margin-top: 0; }
+    .panel-left .row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 0; font-size: 13px;
+    }
+    .panel-left label { cursor: pointer; user-select: none; }
+
+    /* ===== 自定义开关 ===== */
+    .switch {
+      position: relative; width: 36px; height: 18px;
+      appearance: none; -webkit-appearance: none;
+      background: rgba(255,255,255,0.1); border-radius: 9px;
+      cursor: pointer; transition: background .2s;
+      outline: none;
+    }
+    .switch::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #b9d4ec; transition: left .2s, background .2s;
+    }
+    .switch:checked { background: #78c8ff66; }
+    .switch:checked::after { left: 20px; background: #78c8ff; }
+
+    /* ===== 按钮组 ===== */
+    .btn-group { display: flex; gap: 6px; margin-top: 6px; }
+    .btn {
+      flex: 1; padding: 8px 0; font-size: 12px;
+      color: #cfe8ff; background: rgba(120,200,255,0.08);
+      border: 1px solid rgba(120,200,255,0.2); border-radius: 8px;
+      cursor: pointer; transition: all .15s;
+      font-family: inherit;
+    }
+    .btn:hover { background: rgba(120,200,255,0.18); color: #fff; }
+    .btn.active {
+      background: #78c8ff; color: #051628; font-weight: 600;
+      border-color: #78c8ff;
+    }
+
+    /* ===== 时间滑块 ===== */
+    .time-row { margin-top: 10px; }
+    .time-row .time-display {
+      font-size: 14px; color: #78c8ff; font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    input[type="range"] {
+      width: 100%; margin-top: 8px;
+      -webkit-appearance: none; appearance: none;
+      background: transparent; outline: none; cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 4px; background: rgba(120,200,255,0.2); border-radius: 2px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 14px; height: 14px; margin-top: -5px;
+      background: #78c8ff; border-radius: 50%;
+      box-shadow: 0 0 8px #78c8ff88;
+    }
+
+    /* ===== 信息卡片（点击建筑时显示） ===== */
+    .info-card {
+      position: fixed; top: 80px; right: 16px; width: 280px;
+      padding: 18px 20px; z-index: 10;
+      display: none;
+    }
+    .info-card.show { display: block; animation: slideIn .25s ease; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .info-card .close {
+      position: absolute; top: 10px; right: 12px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(255,255,255,0.08); border: none;
+      color: #cfe8ff; cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .info-card .close:hover { background: rgba(255,80,80,0.3); }
+    .info-card h3 {
+      font-size: 16px; color: #78c8ff;
+      margin-bottom: 4px; padding-right: 24px;
+    }
+    .info-card .tag {
+      display: inline-block; padding: 2px 8px; margin-bottom: 10px;
+      font-size: 11px; color: #78c8ff;
+      background: rgba(120,200,255,0.12);
+      border: 1px solid rgba(120,200,255,0.3); border-radius: 10px;
+    }
+    .info-card p { font-size: 13px; line-height: 1.6; color: #c8d8e8; }
+
+    /* ===== 小地图 ===== */
+    .minimap {
+      position: fixed; bottom: 16px; right: 16px;
+      width: 180px; height: 180px;
+      padding: 8px; z-index: 10;
+    }
+    .minimap canvas {
+      width: 100%; height: 100%; border-radius: 6px;
+      background: rgba(0,0,0,0.3);
+    }
+    .minimap .label {
+      position: absolute; top: 12px; left: 14px;
+      font-size: 11px; color: #78c8ff; letter-spacing: 1px;
+    }
+
+    /* ===== 底部操作提示 ===== */
+    .hints {
+      position: fixed; bottom: 16px; left: 16px;
+      padding: 10px 16px; font-size: 12px; color: #a8c2dc;
+      z-index: 10; line-height: 1.7;
+    }
+    .hints .key {
+      display: inline-block; padding: 1px 6px;
+      background: rgba(120,200,255,0.15);
+      border: 1px solid rgba(120,200,255,0.3); border-radius: 4px;
+      color: #78c8ff; font-family: monospace; font-size: 11px;
+    }
+
+    /* ===== FPS 显示 ===== */
+    .fps {
+      position: fixed; top: 16px; left: 16px; z-index: 10;
+      padding: 6px 12px; font-size: 12px; color: #78c8ff;
+      font-family: monospace;
+    }
+
+    /* ===== 加载遮罩 ===== */
+    .loader {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      background: #050b14; transition: opacity .4s;
+    }
+    .loader.hide { opacity: 0; pointer-events: none; }
+    .loader-text { color: #78c8ff; font-size: 14px; letter-spacing: 2px; }
+    .loader-text::after {
+      content: ''; display: inline-block; width: 0;
+      animation: dots 1.4s infinite;
+    }
+    @keyframes dots {
+      0%, 20% { content: ''; }
+      40% { content: '.'; }
+      60% { content: '..'; }
+      80%, 100% { content: '...'; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== 加载遮罩 ===== -->
+  <div class="loader" id="loader">
+    <div class="loader-text">校园场景加载中</div>
+  </div>
+
+  <!-- ===== 3D 渲染画布 ===== -->
+  <canvas id="scene"></canvas>
+
+  <!-- ===== FPS ===== -->
+  <div class="fps glass" id="fps">FPS --</div>
+
+  <!-- ===== 顶部标题 ===== -->
+  <div class="topbar glass">
+    <h1>浙江树人学院 <span class="accent">数字孪生</span> 交互系统</h1>
+    <span class="version">v0.1</span>
+  </div>
+
+  <!-- ===== 左侧控制面板 ===== -->
+  <div class="panel-left glass">
+
+    <h2>图层控制</h2>
+    <div class="row"><label for="layer-ground">地面</label>
+      <input class="switch" type="checkbox" id="layer-ground" data-layer="ground" checked></div>
+    <div class="row"><label for="layer-roads">道路</label>
+      <input class="switch" type="checkbox" id="layer-roads" data-layer="roads" checked></div>
+    <div class="row"><label for="layer-buildings">建筑</label>
+      <input class="switch" type="checkbox" id="layer-buildings" data-layer="buildings" checked></div>
+    <div class="row"><label for="layer-vegetation">植被</label>
+      <input class="switch" type="checkbox" id="layer-vegetation" data-layer="vegetation" checked></div>
+    <div class="row"><label for="layer-facilities">设施</label>
+      <input class="switch" type="checkbox" id="layer-facilities" data-layer="facilities" checked></div>
+    <div class="row"><label for="layer-aiModels">AI 模型</label>
+      <input class="switch" type="checkbox" id="layer-aiModels" data-layer="aiModels" checked></div>
+
+    <h2>视角</h2>
+    <div class="btn-group">
+      <button class="btn active" id="view-persp">透视</button>
+      <button class="btn" id="view-top">鸟瞰</button>
+      <button class="btn" id="view-tour">漫游</button>
+    </div>
+    <div class="btn-group" style="margin-top:8px">
+      <button class="btn" id="reset-btn">重置视角</button>
+    </div>
+
+    <h2>时间</h2>
+    <div class="time-row">
+      <div class="row">
+        <span>当前</span>
+        <span class="time-display" id="time-display">12:00</span>
+      </div>
+      <input type="range" id="time-slider" min="0" max="24" step="0.1" value="12">
+    </div>
+
+  </div>
+
+  <!-- ===== 信息卡片 ===== -->
+  <div class="info-card glass" id="info-card">
+    <button class="close" id="info-close">×</button>
+    <h3 id="info-name">建筑名称</h3>
+    <span class="tag" id="info-tag">类型</span>
+    <p id="info-desc">建筑描述</p>
+  </div>
+
+  <!-- ===== 小地图 ===== -->
+  <div class="minimap glass">
+    <span class="label">小地图</span>
+    <canvas id="minimap-canvas"></canvas>
+  </div>
+
+  <!-- ===== 底部操作提示 ===== -->
+  <div class="hints glass">
+    <span class="key">左键</span> 旋转 ·
+    <span class="key">右键</span> 平移 ·
+    <span class="key">滚轮</span> 缩放 ·
+    <span class="key">点击</span> 查看信息
+  </div>
+
+  <!-- ===== Three.js（本地） ===== -->
+  <script src="./vendor/three.min.js"></script>
+  <script src="./vendor/OrbitControls.js"></script>
+
+  <script>
+  /* ============================================================
+     浙江树人学院数字孪生交互系统
+     v0.1 - 项目骨架 + 占位场景
+     坐标系：1 unit ≈ 1 m  |  原点 = 贺田图书馆  |  北 = -Z，东 = +X
+     ============================================================ */
+
+  // ===== 全局状态 =====
+  let scene, camera, renderer, controls;
+  let raycaster, pointer;
+  const interactables = [];          // 所有可点击对象
+  const layerGroups = {              // 图层分组（按 CAMPUS_DATA.md 第 5 节）
+    ground:     new THREE.Group(),
+    roads:      new THREE.Group(),
+    buildings:  new THREE.Group(),
+    vegetation: new THREE.Group(),
+    facilities: new THREE.Group(),
+    aiModels:   new THREE.Group()
+  };
+  let sun, ambient;                  // 主光源、环境光
+  let minimapCtx, minimapCanvas;     // 小地图
+  let lastFrame = performance.now();
+  let frameCount = 0, fpsTimer = 0;
+  let currentView = 'persp';         // 'persp' | 'top' | 'tour'
+
+  // ===== 场景初始化 =====
+  function initScene() {
+    // 场景 + 雾
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87ceeb);
+    scene.fog = new THREE.Fog(0x87ceeb, 400, 1200);
+
+    // 相机（透视）
+    const aspect = window.innerWidth / window.innerHeight;
+    camera = new THREE.PerspectiveCamera(55, aspect, 0.1, 2000);
+    camera.position.set(260, 200, 260);
+    camera.lookAt(0, 0, 0);
+
+    // 渲染器
+    renderer = new THREE.WebGLRenderer({
+      canvas: document.getElementById('scene'),
+      antialias: true
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+
+    // OrbitControls
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.minDistance = 20;
+    controls.maxDistance = 600;
+    controls.maxPolarAngle = Math.PI * 0.48;   // 不允许低于地平线
+    controls.target.set(0, 0, 0);
+
+    // 光照
+    ambient = new THREE.AmbientLight(0xffffff, 0.45);
+    scene.add(ambient);
+
+    sun = new THREE.DirectionalLight(0xffffff, 1.0);
+    sun.position.set(150, 220, 100);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.left   = -500;
+    sun.shadow.camera.right  =  500;
+    sun.shadow.camera.top    =  500;
+    sun.shadow.camera.bottom = -500;
+    sun.shadow.camera.near = 1;
+    sun.shadow.camera.far  = 800;
+    scene.add(sun);
+
+    // 图层组挂到场景
+    Object.values(layerGroups).forEach(g => scene.add(g));
+
+    // Raycaster
+    raycaster = new THREE.Raycaster();
+    pointer = new THREE.Vector2();
+  }
+
+  // ===== 占位场景（v0.1 临时内容，v0.2 删除） =====
+  function buildPlaceholderScene() {
+    // 占位地面：900 × 650 浅灰绿
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(900, 650),
+      new THREE.MeshStandardMaterial({ color: 0x9ab089, roughness: 0.95 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    layerGroups.ground.add(ground);
+
+    // 网格辅助
+    const grid = new THREE.GridHelper(900, 90, 0x78c8ff, 0x2a4060);
+    grid.material.opacity = 0.25;
+    grid.material.transparent = true;
+    grid.position.y = 0.05;
+    layerGroups.ground.add(grid);
+
+    // 坐标轴（仅开发用，500 m 长）
+    const axes = new THREE.AxesHelper(120);
+    axes.position.y = 0.1;
+    layerGroups.ground.add(axes);
+
+    // 5 个彩色占位立方体（标识方位 + 关键地点）
+    const placeholders = [
+      { name: '贺田图书馆（占位）',     pos: [   0, 10,   35], color: 0xff7a59, desc: '校园地标，v0.3 替换为真实建筑模型' },
+      { name: '体育馆（占位）',         pos: [ 270, 14,  -55], color: 0x59a6ff, desc: '东北运动区，v0.3 替换' },
+      { name: '南校区南门（占位）',     pos: [ -45,  6,  230], color: 0xffce59, desc: 'v0.7 替换为混元 3D 校门模型' },
+      { name: '查济民大厦（占位）',     pos: [ 135, 12,  135], color: 0xa78bfa, desc: '东南行政区，v0.3 替换' },
+      { name: '清乐园 3/4 号楼（占位）', pos: [-260,  8, -260], color: 0x4ade80, desc: '西北生活区，v0.3 替换' }
+    ];
+    placeholders.forEach(p => {
+      const size = 20;
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(size, p.pos[1] * 2, size),
+        new THREE.MeshStandardMaterial({ color: p.color, roughness: 0.7, metalness: 0.1 })
+      );
+      mesh.position.set(p.pos[0], p.pos[1], p.pos[2]);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.userData = { name: p.name, type: '占位对象', desc: p.desc };
+      layerGroups.buildings.add(mesh);
+      interactables.push(mesh);
+    });
+
+    // 校园边界框（淡蓝色虚线感）
+    const boundary = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(900, 0.1, 650)),
+      new THREE.LineBasicMaterial({ color: 0x78c8ff, transparent: true, opacity: 0.4 })
+    );
+    boundary.position.y = 0.2;
+    layerGroups.ground.add(boundary);
+  }
+
+  // ===== 交互：点击对象 =====
+  function onPointerDown(e) {
+    if (e.target.tagName !== 'CANVAS') return;       // 点击 UI 时不触发
+    pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(interactables, true);
+    if (hits.length === 0) return;
+
+    // 找到最近命中的 userData（沿父级回溯）
+    let obj = hits[0].object;
+    while (obj && !obj.userData?.name) obj = obj.parent;
+    if (!obj?.userData?.name) return;
+
+    showInfoCard(obj.userData);
+  }
+
+  function showInfoCard({ name, type, desc }) {
+    document.getElementById('info-name').textContent = name || '未知对象';
+    document.getElementById('info-tag').textContent  = type || '建筑';
+    document.getElementById('info-desc').textContent = desc || '暂无介绍';
+    document.getElementById('info-card').classList.add('show');
+  }
+
+  function hideInfoCard() {
+    document.getElementById('info-card').classList.remove('show');
+  }
+
+  // ===== UI 事件 =====
+  function bindUI() {
+    // 图层开关
+    document.querySelectorAll('.switch[data-layer]').forEach(sw => {
+      sw.addEventListener('change', e => {
+        const key = e.target.dataset.layer;
+        if (layerGroups[key]) layerGroups[key].visible = e.target.checked;
+      });
+    });
+
+    // 视角按钮
+    document.getElementById('view-persp').addEventListener('click', () => setView('persp'));
+    document.getElementById('view-top').addEventListener('click',   () => setView('top'));
+    document.getElementById('view-tour').addEventListener('click',  () => setView('tour'));
+    document.getElementById('reset-btn').addEventListener('click',  () => setView('persp'));
+
+    // 时间滑块（v0.1 仅显示数字，日夜效果在 v0.5 接入）
+    document.getElementById('time-slider').addEventListener('input', e => {
+      updateTimeDisplay(parseFloat(e.target.value));
+    });
+
+    // 信息卡关闭
+    document.getElementById('info-close').addEventListener('click', hideInfoCard);
+
+    // 点击场景
+    renderer.domElement.addEventListener('pointerdown', onPointerDown);
+
+    // 窗口缩放
+    window.addEventListener('resize', onResize);
+  }
+
+  function setView(mode) {
+    currentView = mode;
+    ['persp', 'top', 'tour'].forEach(m => {
+      document.getElementById('view-' + m).classList.toggle('active', m === mode);
+    });
+
+    if (mode === 'persp') {
+      controls.enabled = true;
+      animateCamera({ pos: [260, 200, 260], target: [0, 0, 0] });
+    } else if (mode === 'top') {
+      controls.enabled = true;
+      animateCamera({ pos: [0, 480, 0.1], target: [0, 0, 0] });
+    } else if (mode === 'tour') {
+      // v0.6 实现真正的漫游，v0.1 暂时切到一个低空透视位
+      controls.enabled = true;
+      animateCamera({ pos: [-100, 30, 200], target: [0, 5, 0] });
+    }
+  }
+
+  // 简单的相机平滑过渡
+  function animateCamera({ pos, target }) {
+    const fromPos = camera.position.clone();
+    const fromTgt = controls.target.clone();
+    const toPos = new THREE.Vector3(...pos);
+    const toTgt = new THREE.Vector3(...target);
+    const dur = 800, start = performance.now();
+
+    function step(now) {
+      const t = Math.min(1, (now - start) / dur);
+      const k = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; // easeInOut
+      camera.position.lerpVectors(fromPos, toPos, k);
+      controls.target.lerpVectors(fromTgt, toTgt, k);
+      controls.update();
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function updateTimeDisplay(hour) {
+    const h = Math.floor(hour);
+    const m = Math.floor((hour - h) * 60);
+    document.getElementById('time-display').textContent =
+      String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+  }
+
+  function onResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  // ===== 小地图 =====
+  function initMinimap() {
+    minimapCanvas = document.getElementById('minimap-canvas');
+    const dpr = window.devicePixelRatio || 1;
+    const size = 160;
+    minimapCanvas.width = size * dpr;
+    minimapCanvas.height = size * dpr;
+    minimapCtx = minimapCanvas.getContext('2d');
+    minimapCtx.scale(dpr, dpr);
+  }
+
+  function drawMinimap() {
+    if (!minimapCtx) return;
+    const W = 160, H = 160;
+    // 世界 900 × 650 → 小地图 160 × 160（取较大边居中）
+    const worldW = 900, worldH = 650;
+    const scale = Math.min(W / worldW, H / worldH);
+    const ox = W / 2, oz = H / 2;
+
+    minimapCtx.clearRect(0, 0, W, H);
+
+    // 校园边界
+    minimapCtx.strokeStyle = 'rgba(120,200,255,0.35)';
+    minimapCtx.lineWidth = 1;
+    minimapCtx.strokeRect(ox - worldW * scale / 2, oz - worldH * scale / 2,
+                          worldW * scale, worldH * scale);
+
+    // 建筑点
+    layerGroups.buildings.children.forEach(m => {
+      const x = ox + m.position.x * scale;
+      const z = oz + m.position.z * scale;
+      minimapCtx.fillStyle = '#78c8ff';
+      minimapCtx.fillRect(x - 2, z - 2, 4, 4);
+    });
+
+    // 相机位置（红点 + 朝向）
+    const cx = ox + camera.position.x * scale;
+    const cz = oz + camera.position.z * scale;
+    minimapCtx.fillStyle = '#ff7a59';
+    minimapCtx.beginPath();
+    minimapCtx.arc(cx, cz, 4, 0, Math.PI * 2);
+    minimapCtx.fill();
+
+    // 朝向线（指向 target）
+    const tx = ox + controls.target.x * scale;
+    const tz = oz + controls.target.z * scale;
+    minimapCtx.strokeStyle = '#ff7a59';
+    minimapCtx.beginPath();
+    minimapCtx.moveTo(cx, cz);
+    minimapCtx.lineTo(tx, tz);
+    minimapCtx.stroke();
+  }
+
+  // ===== 主循环 =====
+  function animate(now) {
+    requestAnimationFrame(animate);
+
+    const dt = (now - lastFrame) / 1000;
+    lastFrame = now;
+
+    // FPS
+    frameCount++;
+    fpsTimer += dt;
+    if (fpsTimer >= 0.5) {
+      const fps = Math.round(frameCount / fpsTimer);
+      document.getElementById('fps').textContent = 'FPS ' + fps;
+      frameCount = 0;
+      fpsTimer = 0;
+    }
+
+    controls.update();
+    drawMinimap();
+    renderer.render(scene, camera);
+  }
+
+  // ===== 启动 =====
+  function boot() {
+    initScene();
+    buildPlaceholderScene();
+    initMinimap();
+    bindUI();
+    updateTimeDisplay(12);
+    requestAnimationFrame(animate);
+
+    // 隐藏加载遮罩
+    setTimeout(() => document.getElementById('loader').classList.add('hide'), 300);
+  }
+
+  boot();
+  </script>
+</body>
+</html>

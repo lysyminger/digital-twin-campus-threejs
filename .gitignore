@@ -1,0 +1,23 @@
+# Claude Code 本地配置（不进仓库）
+CLAUDE.md
+.claude/
+*.local
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# 临时与构建产物
+*.log
+*.tmp
+node_modules/
+dist/
+
+# 作业本体附件（保留在本地，不公开）
+期中考核-系统说明手册.docx
