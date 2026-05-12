@@ -1,6 +1,6 @@
 /* ============================================================
    主循环 + 启动入口
-   依赖：scene.js / factories.js / interaction.js / minimap.js
+   依赖：core.js / terrain.js / sports.js / buildings.js / vegetation.js / ui.js
    ============================================================ */
 
 // ===== 主循环 =====
@@ -27,18 +27,29 @@ function animate(now) {
 // ===== 启动 =====
 function boot() {
   initScene();
+
+  // 地形
   createGround();
-  createRoads();
+  createCampusRoads();
+  createGreenAreas();
+
+  // 运动设施
   createTrack();
   createGrandstand();
   createBasketballCourts();
-  createFootballField();
-  createGreenAreas();
+
+  // 建筑
+  createBuildings();
+
+  // 植被与设施
+  createTrees();
+  createStreetLamps();
+
+  // UI
   bindUI();
   updateTimeDisplay(12);
-  requestAnimationFrame(animate);
 
-  // 隐藏加载遮罩
+  requestAnimationFrame(animate);
   setTimeout(() => document.getElementById('loader').classList.add('hide'), 300);
 }
 
