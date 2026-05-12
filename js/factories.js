@@ -3,6 +3,19 @@
    依赖：scene.js（layerGroups, interactables）
    ============================================================ */
 
+// 贴地薄片材质工厂：polygonOffset 把覆盖物在深度上微微"前移"，
+// 与地坪不再竞争同一深度值；priority 越大（factor/units 越负），越靠近相机。
+// 1=绿地，2=道路，3=球场/跑道，4=跑道内场——保证渲染顺序稳定。
+function overlayMat(color, priority) {
+  return new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.9,
+    polygonOffset: true,
+    polygonOffsetFactor: -priority,
+    polygonOffsetUnits: -priority
+  });
+}
+
 // ===== 地坪 + 校园边界 =====
 function createGround() {
   // 主体地坪：1000 × 700 浅灰绿（覆盖整个 900×650 校园再留余量）
@@ -39,12 +52,13 @@ const ROAD_DATA = [
 ];
 
 function createRoads() {
-  const mat = new THREE.MeshStandardMaterial({ color: 0x4a4a4a, roughness: 0.92 });
+  const mat = overlayMat(0x4a4a4a, 2);
 
   ROAD_DATA.forEach(road => {
     const group = new THREE.Group();
 
     // 每对相邻关键点：扁平 Box 段 + 端点圆盘衔接
+    // y=0.05（不再是 0.02），与地坪拉开足够间距作为 polygonOffset 之外的兜底
     for (let i = 0; i < road.points.length - 1; i++) {
       const [x1, z1] = road.points[i];
       const [x2, z2] = road.points[i + 1];
@@ -55,7 +69,7 @@ function createRoads() {
         new THREE.BoxGeometry(len, 0.04, road.width),
         mat
       );
-      seg.position.set((x1 + x2) / 2, 0.02, (z1 + z2) / 2);
+      seg.position.set((x1 + x2) / 2, 0.05, (z1 + z2) / 2);
       seg.rotation.y = -Math.atan2(dz, dx);
       seg.receiveShadow = true;
       group.add(seg);
@@ -66,7 +80,7 @@ function createRoads() {
           new THREE.CylinderGeometry(road.width / 2, road.width / 2, 0.04, 16),
           mat
         );
-        join.position.set(x1, 0.02, z1);
+        join.position.set(x1, 0.05, z1);
         join.receiveShadow = true;
         group.add(join);
       }
@@ -99,11 +113,8 @@ function createTrack() {
   trackShape.holes.push(hole);
   const trackGeo = new THREE.ExtrudeGeometry(trackShape, { depth: 0.04, bevelEnabled: false });
   trackGeo.rotateX(-Math.PI / 2);
-  const track = new THREE.Mesh(
-    trackGeo,
-    new THREE.MeshStandardMaterial({ color: 0xc94d3a, roughness: 0.85 })
-  );
-  track.position.set(cx, 0.03, cz);
+  const track = new THREE.Mesh(trackGeo, overlayMat(0xc94d3a, 3));
+  track.position.set(cx, 0.10, cz);
   track.receiveShadow = true;
   group.add(track);
 
@@ -112,11 +123,8 @@ function createTrack() {
   fieldShape.absellipse(0, 0, 30, 50, 0, Math.PI * 2);
   const fieldGeo = new THREE.ShapeGeometry(fieldShape);
   fieldGeo.rotateX(-Math.PI / 2);
-  const field = new THREE.Mesh(
-    fieldGeo,
-    new THREE.MeshStandardMaterial({ color: 0x4a7a3a, roughness: 0.95 })
-  );
-  field.position.set(cx, 0.035, cz);
+  const field = new THREE.Mesh(fieldGeo, overlayMat(0x4a7a3a, 4));
+  field.position.set(cx, 0.12, cz);
   field.receiveShadow = true;
   group.add(field);
 
@@ -161,13 +169,13 @@ function createGrandstand() {
 function createBasketballCourts() {
   const group = new THREE.Group();
   const positions = [[210, -95], [210, -75]];
-  const courtMat = new THREE.MeshStandardMaterial({ color: 0x3a6f9a, roughness: 0.85 });
+  const courtMat = overlayMat(0x3a6f9a, 3);
   const lineMat  = new THREE.LineBasicMaterial({ color: 0xffffff });
 
   positions.forEach(([cx, cz]) => {
     const court = new THREE.Mesh(new THREE.PlaneGeometry(28, 15), courtMat);
     court.rotation.x = -Math.PI / 2;
-    court.position.set(cx, 0.025, cz);
+    court.position.set(cx, 0.06, cz);
     court.receiveShadow = true;
     group.add(court);
 
@@ -176,7 +184,7 @@ function createBasketballCourts() {
       lineMat
     );
     edge.rotation.x = -Math.PI / 2;
-    edge.position.set(cx, 0.03, cz);
+    edge.position.set(cx, 0.08, cz);
     group.add(edge);
   });
 
@@ -193,12 +201,9 @@ function createBasketballCourts() {
 function createFootballField() {
   const group = new THREE.Group();
   const cx = 170, cz = -85;
-  const field = new THREE.Mesh(
-    new THREE.PlaneGeometry(50, 30),
-    new THREE.MeshStandardMaterial({ color: 0x4a7a3a, roughness: 0.95 })
-  );
+  const field = new THREE.Mesh(new THREE.PlaneGeometry(50, 30), overlayMat(0x4a7a3a, 3));
   field.rotation.x = -Math.PI / 2;
-  field.position.set(cx, 0.022, cz);
+  field.position.set(cx, 0.06, cz);
   field.receiveShadow = true;
   group.add(field);
 
@@ -207,7 +212,7 @@ function createFootballField() {
     new THREE.LineBasicMaterial({ color: 0xffffff })
   );
   edge.rotation.x = -Math.PI / 2;
-  edge.position.set(cx, 0.026, cz);
+  edge.position.set(cx, 0.08, cz);
   group.add(edge);
 
   group.userData = {
@@ -221,7 +226,7 @@ function createFootballField() {
 
 // ===== 简易绿地（v0.4 再补树木） =====
 function createGreenAreas() {
-  const mat = new THREE.MeshStandardMaterial({ color: 0x6a9a5a, roughness: 0.95 });
+  const mat = overlayMat(0x6a9a5a, 1);
   const list = [
     { name: '中央广场草坪',   geom: new THREE.CircleGeometry(22, 32), x:   0, z:    5 },
     { name: '教学区中央绿地', geom: new THREE.PlaneGeometry(80, 40),   x: -90, z:   50 },
@@ -232,7 +237,7 @@ function createGreenAreas() {
   list.forEach(({ name, geom, x, z }) => {
     const m = new THREE.Mesh(geom, mat);
     m.rotation.x = -Math.PI / 2;
-    m.position.set(x, 0.01, z);
+    m.position.set(x, 0.03, z);
     m.receiveShadow = true;
     m.userData = { name, type: '绿地', desc: '粗粒度绿化区，v0.4 将散布树木与花坛。' };
     layerGroups.vegetation.add(m);

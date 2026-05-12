@@ -29,9 +29,9 @@ function initScene() {
   scene.background = new THREE.Color(0x87ceeb);
   scene.fog = new THREE.Fog(0x87ceeb, 400, 1200);
 
-  // 相机（透视）
+  // 相机（透视）near=1（不是 0.1）以提升远距离深度缓冲精度，缓解大场景 z-fighting
   const aspect = window.innerWidth / window.innerHeight;
-  camera = new THREE.PerspectiveCamera(55, aspect, 0.1, 2000);
+  camera = new THREE.PerspectiveCamera(55, aspect, 1, 2000);
   camera.position.set(260, 200, 260);
   camera.lookAt(0, 0, 0);
 
