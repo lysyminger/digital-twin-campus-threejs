@@ -36,7 +36,30 @@ const CAMPUS_ROADS = [
   { id: "ROAD-ADMIN-CONNECTOR", name: "行政区连接路", type: "branch", width: 5,
     points: [[105,-30],[115,5],[160,10],[210,8],[250,5]] },
   { id: "ROAD-NORTH-GATE-CONNECTOR", name: "北校区南门连接路", type: "branch", width: 5,
-    points: [[148,-80],[148,-105],[150,-135],[160,-165]] }
+    points: [[148,-80],[148,-105],[150,-135],[160,-165]] },
+
+  // 南校区教学组团补充道路
+  { id: "ROAD-SOUTH-ROUNDABOUT", name: "南校区中轴环岛", type: "loop", width: 4,
+    points: (function() {
+      var cx = -2, cz = 158, rx = 16, rz = 12, pts = [];
+      for (var i = 0; i <= 16; i++) {
+        var a = (i / 16) * Math.PI * 2;
+        pts.push([cx + Math.cos(a) * rx, cz + Math.sin(a) * rz]);
+      }
+      return pts;
+    })() },
+  { id: "ROAD-SOUTH-EAST-WALK", name: "教学区东侧步道", type: "branch", width: 3,
+    points: [[85,175],[85,155],[85,135],[85,110]] },
+  { id: "ROAD-SOUTH-WEST-WALK", name: "教学区西侧步道", type: "branch", width: 3,
+    points: [[-85,175],[-85,155],[-85,135],[-85,110]] },
+  { id: "ROAD-SOUTH-CROSS-UPPER", name: "教学区北侧横向步道", type: "branch", width: 3,
+    points: [[-75,110],[-40,108],[0,105],[40,108],[75,110]] },
+  { id: "ROAD-SOUTH-CROSS-MID", name: "教学区中部横向步道", type: "branch", width: 3,
+    points: [[-85,158],[-50,158],[-18,158],[14,158],[50,158],[85,158]] },
+  { id: "ROAD-GARDEN-INNER-NS", name: "中央花园南北步道", type: "branch", width: 2,
+    points: [[-2,175],[-2,155],[-2,135],[-2,118]] },
+  { id: "ROAD-GARDEN-INNER-EW", name: "中央花园东西步道", type: "branch", width: 2,
+    points: [[-30,145],[0,145],[30,145]] }
 ];
 
 // ===== 程序化沥青纹理 =====
@@ -249,11 +272,42 @@ function createCampusRoads() {
 // ===== 绿地 =====
 function createGreenAreas() {
   const mat = overlayMat(0x6a9a5a, 1);
+  const gardenMat = overlayMat(0x5d8f4e, 1);
   const list = [
-    { name: '图书馆前广场草坪', geom: new THREE.PlaneGeometry(60, 30), x: -4, z: 55 }
+    // 图书馆前广场草坪
+    { name: '图书馆前广场草坪', geom: new THREE.PlaneGeometry(60, 25), x: -4, z: 58 },
+
+    // 南门入口右侧大草坪（主轴与A1之间）
+    { name: '南门右侧草坪', geom: new THREE.PlaneGeometry(48, 35), x: 35, z: 198 },
+    // 南门入口左侧大草坪（主轴与A2之间）
+    { name: '南门左侧草坪', geom: new THREE.PlaneGeometry(48, 35), x: -38, z: 198 },
+
+    // A1与A3之间内庭草坪（右侧）
+    { name: '东侧教学楼内庭草坪', geom: new THREE.PlaneGeometry(40, 24), x: 67, z: 161 },
+    // A2与A4之间内庭草坪（左侧）
+    { name: '西侧教学楼内庭草坪', geom: new THREE.PlaneGeometry(40, 24), x: -63, z: 161 },
+
+    // 中央花园草坪（四块对称）
+    { name: '中央花园草坪（右上）', geom: new THREE.PlaneGeometry(14, 12), x: 15, z: 138, color: gardenMat },
+    { name: '中央花园草坪（左上）', geom: new THREE.PlaneGeometry(14, 12), x: -17, z: 138, color: gardenMat },
+    { name: '中央花园草坪（右下）', geom: new THREE.PlaneGeometry(14, 12), x: 15, z: 153, color: gardenMat },
+    { name: '中央花园草坪（左下）', geom: new THREE.PlaneGeometry(14, 12), x: -17, z: 153, color: gardenMat },
+
+    // B1周边草坪（右上）
+    { name: 'B1北侧草坪', geom: new THREE.PlaneGeometry(28, 10), x: 73, z: 85 },
+    // B2周边草坪（左上）
+    { name: 'B2北侧草坪', geom: new THREE.PlaneGeometry(28, 10), x: -71, z: 89 },
+
+    // 环路外侧边缘草坪
+    { name: '教学区东侧边缘绿地', geom: new THREE.PlaneGeometry(12, 90), x: 96, z: 160 },
+    { name: '教学区西侧边缘绿地', geom: new THREE.PlaneGeometry(12, 90), x: -96, z: 160 },
+
+    // A3/A4与B1/B2之间过渡草坪
+    { name: '右侧过渡草坪', geom: new THREE.PlaneGeometry(30, 14), x: 70, z: 120 },
+    { name: '左侧过渡草坪', geom: new THREE.PlaneGeometry(30, 14), x: -68, z: 120 },
   ];
-  list.forEach(({ name, geom, x, z }) => {
-    const m = new THREE.Mesh(geom, mat);
+  list.forEach(({ name, geom, x, z, color }) => {
+    const m = new THREE.Mesh(geom, color || mat);
     m.rotation.x = -Math.PI / 2;
     m.position.set(x, 0.01, z);
     m.receiveShadow = true;
