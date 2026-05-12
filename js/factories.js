@@ -34,7 +34,7 @@ const ROAD_DATA = [
   { name: '东部运动区环路',           points: [[150, -90], [310, -90], [330, 40], [280, 120], [180, 90], [150, -20]], width: 6 },
   { name: '西部教学区支路',           points: [[-210, -140], [-180, -60], [-120, -25], [-60, -10]], width: 5 },
   { name: '行政生活区支路',           points: [[110, 40], [140, 120], [220, 170], [285, 170]], width: 5 },
-  { name: '体育馆-操场连接小路',      points: [[290, -100], [305, -75], [315, -50], [315, -28]], width: 3 },
+  { name: '体育馆-操场连接小路',      points: [[285, -105], [305, -95], [315, -88]], width: 3 },
   { name: '球场-宿舍通路',            points: [[210, -80], [240, -100], [290, -115], [345, -120], [380, -170]], width: 5 }
 ];
 
@@ -84,16 +84,18 @@ function createRoads() {
   });
 }
 
-// ===== 操场（椭圆跑道 + 内场） =====
+// ===== 操场（南北长轴的椭圆跑道 + 内场） =====
 function createTrack() {
   const group = new THREE.Group();
   const cx = 315, cz = -25;
+  // 长轴沿 Z（南北），短轴沿 X（东西）
+  // 外椭圆 X 半轴 40，Z 半轴 60 → 整体 80（东西）× 120（南北）
+  // 内椭圆 X 半轴 30，Z 半轴 50 → 整体 60 × 100
 
-  // 红色塑胶跑道：椭圆环（外 60×40，内 50×30）
   const trackShape = new THREE.Shape();
-  trackShape.absellipse(0, 0, 60, 40, 0, Math.PI * 2, false, 0);
+  trackShape.absellipse(0, 0, 40, 60, 0, Math.PI * 2, false, 0);
   const hole = new THREE.Path();
-  hole.absellipse(0, 0, 50, 30, 0, Math.PI * 2, true, 0);
+  hole.absellipse(0, 0, 30, 50, 0, Math.PI * 2, true, 0);
   trackShape.holes.push(hole);
   const trackGeo = new THREE.ExtrudeGeometry(trackShape, { depth: 0.04, bevelEnabled: false });
   trackGeo.rotateX(-Math.PI / 2);
@@ -105,9 +107,9 @@ function createTrack() {
   track.receiveShadow = true;
   group.add(track);
 
-  // 内场草坪（足球场）：椭圆 50×30
+  // 内场草坪（足球场）：椭圆 30 × 50（X × Z）
   const fieldShape = new THREE.Shape();
-  fieldShape.absellipse(0, 0, 50, 30, 0, Math.PI * 2);
+  fieldShape.absellipse(0, 0, 30, 50, 0, Math.PI * 2);
   const fieldGeo = new THREE.ShapeGeometry(fieldShape);
   fieldGeo.rotateX(-Math.PI / 2);
   const field = new THREE.Mesh(
@@ -121,7 +123,7 @@ function createTrack() {
   group.userData = {
     name: '操场',
     type: '运动设施',
-    desc: '标准椭圆塑胶跑道（外 120×80 m），内场为足球草坪。东北运动区核心。'
+    desc: '南北走向的椭圆塑胶跑道（80 m × 120 m），内场为足球草坪。东北运动区核心。'
   };
   interactables.push(group);
   layerGroups.facilities.add(group);
@@ -130,7 +132,8 @@ function createTrack() {
 // ===== 主席台看台（操场西侧，朝东三级阶梯） =====
 function createGrandstand() {
   const group = new THREE.Group();
-  const baseX = 243, baseZ = -25;
+  // 跑道西缘 x=275（操场中心 315 - X 半轴 40）；看台贴跑道往西延伸
+  const baseX = 270, baseZ = -25;
   const mat = new THREE.MeshStandardMaterial({ color: 0xb8b8b0, roughness: 0.85 });
 
   // 3 级阶梯：i=0 最东最低（贴近跑道），i=2 最西最高
