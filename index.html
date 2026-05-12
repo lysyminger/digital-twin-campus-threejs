@@ -300,6 +300,7 @@
     aiModels:   new THREE.Group()
   };
   let sun, ambient;                  // 主光源、环境光
+  const streetLamps = [];            // 路灯集合：{ light: PointLight, bulbMat: Material }
   let minimapCtx, minimapCanvas;     // 小地图
   let lastFrame = performance.now();
   let frameCount = 0, fpsTimer = 0;
@@ -407,6 +408,13 @@
       interactables.push(mesh);
     });
 
+    // 占位路灯（v0.4 由队友替换为真实灯柱模型）
+    const lampPositions = [
+      [  60,  20], [ -60,  20], [  60, -20], [ -60, -20],
+      [ 150, 100], [-150, 100], [   0, 180], [ 200, -80]
+    ];
+    lampPositions.forEach(([x, z]) => createStreetLamp(x, z));
+
     // 校园边界框（淡蓝色虚线感）
     const boundary = new THREE.LineSegments(
       new THREE.EdgesGeometry(new THREE.BoxGeometry(900, 0.1, 650)),
@@ -414,6 +422,97 @@
     );
     boundary.position.y = 0.2;
     layerGroups.ground.add(boundary);
+  }
+
+  // ===== 路灯工厂 =====
+  // 每盏灯 = 灯柱 + 灯头球 + PointLight，球的 emissive 在夜晚被点亮
+  function createStreetLamp(x, z) {
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+
+    // 灯柱
+    const pole = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.18, 0.22, 6, 8),
+      new THREE.MeshStandardMaterial({ color: 0x2a3340, roughness: 0.7 })
+    );
+    pole.position.y = 3;
+    pole.castShadow = true;
+    group.add(pole);
+
+    // 灯头球（自发光材质，白天 emissive 强度=0，夜晚=1）
+    const bulbMat = new THREE.MeshStandardMaterial({
+      color: 0xfff2c8,
+      emissive: 0xffcc66,
+      emissiveIntensity: 0,
+      roughness: 0.4
+    });
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 12), bulbMat);
+    bulb.position.y = 6.2;
+    group.add(bulb);
+
+    // PointLight：暖黄色，照射半径 ~25m
+    const light = new THREE.PointLight(0xffcc66, 0, 25, 1.6);
+    light.position.y = 6.2;
+    group.add(light);
+
+    layerGroups.facilities.add(group);
+    streetLamps.push({ light, bulbMat });
+    return group;
+  }
+
+  // ===== 日夜循环 =====
+  // hour: 0~24，分别更新太阳位置、天空/雾颜色、光照强度、路灯
+  const SKY_DAY  = new THREE.Color(0x87ceeb);
+  const SKY_DUSK = new THREE.Color(0xff8855);
+  const SKY_NIGHT= new THREE.Color(0x0a1530);
+  const _tmpColor= new THREE.Color();
+
+  function updateTimeOfDay(hour) {
+    // ---- 1. 太阳位置（沿东-上-西的半圆弧）----
+    // hour=6 → 东方地平线(+X)，hour=12 → 正上方(+Y)，hour=18 → 西方地平线(-X)
+    const t = (hour - 6) / 12;                     // 0=日出, 1=日落
+    const angle = t * Math.PI;                     // 0 ~ π
+    const R = 300;
+    sun.position.set(Math.cos(angle) * R, Math.sin(angle) * R, 80);
+
+    // ---- 2. 天空 / 雾颜色（按时段插值）----
+    let skyColor;
+    if (hour >= 7 && hour <= 17) {
+      skyColor = SKY_DAY.clone();                                          // 白天
+    } else if (hour >= 5 && hour < 7) {
+      skyColor = _tmpColor.copy(SKY_DUSK).lerp(SKY_DAY, (hour - 5) / 2).clone();   // 日出
+    } else if (hour > 17 && hour <= 19) {
+      skyColor = _tmpColor.copy(SKY_DAY).lerp(SKY_DUSK, (hour - 17) / 2).clone();  // 日落
+    } else if (hour > 19 && hour <= 21) {
+      skyColor = _tmpColor.copy(SKY_DUSK).lerp(SKY_NIGHT, (hour - 19) / 2).clone();// 入夜
+    } else if (hour >= 3 && hour < 5) {
+      skyColor = _tmpColor.copy(SKY_NIGHT).lerp(SKY_DUSK, (hour - 3) / 2).clone();// 黎明前
+    } else {
+      skyColor = SKY_NIGHT.clone();                                        // 深夜
+    }
+    scene.background = skyColor;
+    if (scene.fog) scene.fog.color.copy(skyColor);
+
+    // ---- 3. 光照强度 ----
+    let sunI, ambI;
+    if (hour >= 7 && hour <= 17) {           // 白天
+      sunI = 1.0; ambI = 0.45;
+    } else if ((hour >= 5 && hour < 7) || (hour > 17 && hour <= 19)) {     // 晨昏
+      sunI = 0.7; ambI = 0.3;
+    } else {                                                                // 夜晚
+      sunI = 0.1; ambI = 0.15;
+    }
+    sun.intensity = sunI;
+    ambient.intensity = ambI;
+    // 太阳低于地平线时关阴影避免反向投射
+    sun.castShadow = sun.position.y > 5;
+
+    // ---- 4. 夜晚路灯 ----
+    const isNight = (hour < 6 || hour > 19);
+    streetLamps.forEach(({ light, bulbMat }) => {
+      light.intensity = isNight ? 0.5 : 0;
+      bulbMat.emissiveIntensity = isNight ? 1.0 : 0;
+    });
   }
 
   // ===== 交互：点击对象 =====
@@ -461,9 +560,11 @@
     document.getElementById('view-tour').addEventListener('click',  () => setView('tour'));
     document.getElementById('reset-btn').addEventListener('click',  () => setView('persp'));
 
-    // 时间滑块（v0.1 仅显示数字，日夜效果在 v0.5 接入）
+    // 时间滑块：显示数字 + 触发日夜循环
     document.getElementById('time-slider').addEventListener('input', e => {
-      updateTimeDisplay(parseFloat(e.target.value));
+      const hour = parseFloat(e.target.value);
+      updateTimeDisplay(hour);
+      updateTimeOfDay(hour);
     });
 
     // 信息卡关闭
@@ -609,6 +710,7 @@
     initMinimap();
     bindUI();
     updateTimeDisplay(12);
+    updateTimeOfDay(12);
     requestAnimationFrame(animate);
 
     // 隐藏加载遮罩
