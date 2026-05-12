@@ -1,5 +1,5 @@
 /* ============================================================
-   地形：地坪 / 路网（ribbon mesh）/ 绿地
+   地形：地坪 / 路网（ribbon mesh + 沥青纹理）/ 绿地
    依赖：core.js（layerGroups, interactables, overlayMat）
    ============================================================ */
 
@@ -39,6 +39,70 @@ const CAMPUS_ROADS = [
     points: [[148,-80],[148,-105],[150,-135],[160,-165]] }
 ];
 
+// ===== 程序化沥青纹理 =====
+function createAsphaltTexture() {
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  // 深灰沥青底色
+  ctx.fillStyle = '#3a3e42';
+  ctx.fillRect(0, 0, size, size);
+
+  // 沥青颗粒噪点
+  const imgData = ctx.getImageData(0, 0, size, size);
+  const data = imgData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const noise = (Math.random() - 0.5) * 30;
+    data[i]     = Math.max(0, Math.min(255, data[i] + noise));
+    data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise));
+    data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise));
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  // 随机小裂纹
+  ctx.strokeStyle = 'rgba(30, 30, 30, 0.3)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i < 15; i++) {
+    const sx = Math.random() * size, sy = Math.random() * size;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(sx + (Math.random() - 0.5) * 40, sy + (Math.random() - 0.5) * 40);
+    ctx.stroke();
+  }
+
+  // 浅色碎石点
+  ctx.fillStyle = 'rgba(100, 100, 95, 0.4)';
+  for (let i = 0; i < 80; i++) {
+    const r = 0.5 + Math.random() * 1.5;
+    ctx.beginPath();
+    ctx.arc(Math.random() * size, Math.random() * size, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(1, 1);
+  return tex;
+}
+
+// 沥青材质（带纹理）
+function createAsphaltMaterial() {
+  const tex = createAsphaltTexture();
+  return new THREE.MeshStandardMaterial({
+    map: tex,
+    color: 0x4a4e52,
+    roughness: 0.92,
+    metalness: 0.0,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2
+  });
+}
+
 // ===== 道路工具函数 =====
 function roadNormal(p1, p2) {
   const dx = p2[0] - p1[0], dz = p2[1] - p1[1];
@@ -58,9 +122,18 @@ function cornerNormal(prev, curr, next) {
   return [bx * miter, bz * miter];
 }
 
+// 生成道路条带（ribbon mesh + UV 坐标）
 function createRoadStrip(points, width, mat, yVal) {
   const hw = width / 2, n = points.length, y = yVal || 0.02;
-  const pos = [], idx = [];
+  const pos = [], uvs = [], idx = [];
+
+  // 累计路程用于 UV.v
+  let totalDist = 0;
+  const dists = [0];
+  for (let i = 1; i < n; i++) {
+    totalDist += Math.hypot(points[i][0] - points[i-1][0], points[i][1] - points[i-1][1]);
+    dists.push(totalDist);
+  }
 
   for (let i = 0; i < n; i++) {
     let nx, nz;
@@ -70,14 +143,20 @@ function createRoadStrip(points, width, mat, yVal) {
     const [px, pz] = points[i];
     pos.push(px + nx * hw, y, pz + nz * hw);
     pos.push(px - nx * hw, y, pz - nz * hw);
+
+    // UV：u=0 左侧, u=1 右侧; v 按路程比例（每 10m 重复一次纹理）
+    const v = dists[i] / 10;
+    uvs.push(0, v);
+    uvs.push(1, v);
   }
   for (let i = 0; i < n - 1; i++) {
     const a = i * 2, b = a + 1, c = a + 2, d = a + 3;
-    idx.push(a, b, c, b, d, c);
+    idx.push(a, c, b, b, c, d);
   }
 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geo.setIndex(idx);
   geo.computeVertexNormals();
   const mesh = new THREE.Mesh(geo, mat);
@@ -85,6 +164,7 @@ function createRoadStrip(points, width, mat, yVal) {
   return mesh;
 }
 
+// 黄色虚线（道路中心线）
 function createDashedCenterLine(points) {
   const group = new THREE.Group();
   const mat = new THREE.MeshBasicMaterial({ color: 0xd8c75a });
@@ -97,8 +177,8 @@ function createDashedCenterLine(points) {
     const angle = Math.atan2(dz, dx);
     let d = 1;
     while (d + 2 <= segLen) {
-      const dash = new THREE.Mesh(new THREE.BoxGeometry(2, 0.005, 0.15), mat);
-      dash.position.set(x1 + ux * (d + 1), 0.025, z1 + uz * (d + 1));
+      const dash = new THREE.Mesh(new THREE.BoxGeometry(2, 0.005, 0.2), mat);
+      dash.position.set(x1 + ux * (d + 1), 0.03, z1 + uz * (d + 1));
       dash.rotation.y = -angle;
       group.add(dash);
       d += 4;
@@ -107,23 +187,23 @@ function createDashedCenterLine(points) {
   return group;
 }
 
+// 白色边线（ribbon 条带，更粗更明显）
 function createRoadEdgeLines(points, width) {
   const group = new THREE.Group();
-  const edgeMat = new THREE.LineBasicMaterial({ color: 0xe8e8e8 });
+  const edgeMat = new THREE.MeshBasicMaterial({ color: 0xeeeeee });
   const n = points.length, hw = width / 2;
 
   [-1, 1].forEach(side => {
-    const verts = [];
+    const edgePts = [];
     for (let i = 0; i < n; i++) {
       let nx, nz;
       if (i === 0) [nx, nz] = roadNormal(points[0], points[1]);
       else if (i === n - 1) [nx, nz] = roadNormal(points[n - 2], points[n - 1]);
       else [nx, nz] = cornerNormal(points[i - 1], points[i], points[i + 1]);
-      verts.push(points[i][0] + nx * hw * side, 0.025, points[i][1] + nz * hw * side);
+      edgePts.push([points[i][0] + nx * hw * side, points[i][1] + nz * hw * side]);
     }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
-    group.add(new THREE.Line(geo, edgeMat));
+    const strip = createRoadStrip(edgePts, 0.3, edgeMat, 0.03);
+    group.add(strip);
   });
   return group;
 }
@@ -148,11 +228,11 @@ function createGround() {
 
 // ===== 路网主入口 =====
 function createCampusRoads() {
-  const roadMat = overlayMat(0x3f4548, 2);
+  const asphaltMat = createAsphaltMaterial();
 
   CAMPUS_ROADS.forEach(road => {
     const group = new THREE.Group();
-    group.add(createRoadStrip(road.points, road.width, roadMat));
+    group.add(createRoadStrip(road.points, road.width, asphaltMat));
     group.add(createDashedCenterLine(road.points));
     group.add(createRoadEdgeLines(road.points, road.width));
 
@@ -170,11 +250,7 @@ function createCampusRoads() {
 function createGreenAreas() {
   const mat = overlayMat(0x6a9a5a, 1);
   const list = [
-    { name: '中央广场草坪',   geom: new THREE.CircleGeometry(22, 32), x:   0, z:    5 },
-    { name: '教学区中央绿地', geom: new THREE.PlaneGeometry(80, 40),  x: -90, z:   50 },
-    { name: '南门花园',       geom: new THREE.PlaneGeometry(70, 25),  x:  -2, z:  205 },
-    { name: '行政区绿带',     geom: new THREE.PlaneGeometry(60, 30),  x: 170, z:   80 },
-    { name: '东北运动区绿地', geom: new THREE.PlaneGeometry(80, 50),  x: 340, z: -220 }
+    { name: '图书馆前广场草坪', geom: new THREE.PlaneGeometry(60, 30), x: -4, z: 55 }
   ];
   list.forEach(({ name, geom, x, z }) => {
     const m = new THREE.Mesh(geom, mat);

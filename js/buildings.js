@@ -7,8 +7,8 @@
 const BUILDING_DATA = [
   // 核心区
   { id:"C-CORE-01", name:"贺田图书馆/树兰国际医学院", x:-4, z:19,
-    w:55, d:35, h:20, shape:"L", color:0xe8dcc4, zone:"核心区", pri:"high",
-    desc:"校园核心地标，集图书馆与医学院于一体，5 层建筑。" },
+    w:55, d:35, h:28, shape:"library", color:0xe8dcc4, zone:"核心区", pri:"high",
+    desc:"校园核心地标，集图书馆与医学院于一体，底部裙房+中央塔楼。" },
   { id:"C-CORE-02", name:"树人礼堂", x:-53, z:-36,
     w:35, d:22, h:10, shape:"rect", color:0xd8d0c0, zone:"核心区", pri:"high",
     desc:"校园大礼堂，承办大型活动和学术报告。" },
@@ -198,7 +198,32 @@ function buildStructure(info) {
   const group = new THREE.Group();
   const mat = getWallMat(info.color);
 
-  if (info.shape === 'L') {
+  if (info.shape === 'library') {
+    // 图书馆：扁平裙房 + 中央竖直塔楼
+    const baseH = 8;
+    const base = new THREE.Mesh(new THREE.BoxGeometry(info.w, baseH, info.d), mat);
+    base.position.y = baseH / 2;
+    base.castShadow = true; base.receiveShadow = true;
+    group.add(base);
+
+    const baseRoof = new THREE.Mesh(new THREE.BoxGeometry(info.w + 1, 0.3, info.d + 1), roofMat);
+    baseRoof.position.y = baseH + 0.15;
+    group.add(baseRoof);
+
+    const towerW = 18, towerD = 14;
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(towerW, info.h, towerD), mat);
+    tower.position.y = info.h / 2;
+    tower.castShadow = true; tower.receiveShadow = true;
+    group.add(tower);
+
+    const towerRoof = new THREE.Mesh(new THREE.BoxGeometry(towerW + 1, 0.3, towerD + 1), roofMat);
+    towerRoof.position.y = info.h + 0.15;
+    group.add(towerRoof);
+
+    // 塔楼窗户
+    const towerInfo = { w: towerW, d: towerD, h: info.h, pri: 'high' };
+    addWindows(group, towerInfo);
+  } else if (info.shape === 'L') {
     // L 形：主翼 + 侧翼
     const mainW = info.w * 0.6, sideD = info.d * 0.5;
     const main = new THREE.Mesh(new THREE.BoxGeometry(info.w, info.h, info.d * 0.5), mat);
