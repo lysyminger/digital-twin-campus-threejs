@@ -50,8 +50,10 @@ function boot() {
   createBuildings();
 
   // 植被与设施
+  createGreenAreaPatches();
   createTrees();
   createStreetLamps();
+  createBenches();
 
   // UI
   bindUI();
