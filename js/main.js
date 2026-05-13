@@ -48,6 +48,7 @@ function boot() {
   // UI
   bindUI();
   updateTimeDisplay(12);
+  updateTimeOfDay(12);   // 初始化为正午
 
   requestAnimationFrame(animate);
   setTimeout(() => document.getElementById('loader').classList.add('hide'), 300);

@@ -10,7 +10,16 @@ const TREE_DATA = [
 
 // ===== 可编辑路灯数据 =====
 // 每盏灯：[x, z]
+// 沿主干道布点：南侧主路 / 中央东西主路 / 北侧学院路 / 南门中轴
 const LAMP_DATA = [
+  // 南侧主路 (Z ≈ 230)
+  [-300, 230], [-100, 230], [ 100, 230], [ 300, 230],
+  // 中央东西主路 (Z ≈ 0)
+  [-220,   0], [ -90,   0], [  90,   0], [ 220,   0],
+  // 北侧学院路 (Z ≈ -260)
+  [-200, -260], [   0, -260], [ 200, -260],
+  // 南门中轴路 (X ≈ -30 ~ 0)
+  [ -30, 180], [ -15, 120], [   0,  60]
 ];
 
 // ===== 单棵树 =====
@@ -71,19 +80,29 @@ function createStreetLamp(x, z) {
   pole.castShadow = true;
   group.add(pole);
 
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.3, 8, 6),
-    new THREE.MeshStandardMaterial({ color: 0xffcc66, emissive: 0x000000, roughness: 0.5 })
-  );
+  // 灯头：发光球（emissive 由 updateTimeOfDay 在夜晚点亮）
+  const bulbMat = new THREE.MeshStandardMaterial({
+    color: 0xfff2c8,
+    emissive: 0x000000,
+    emissiveIntensity: 0,
+    roughness: 0.4
+  });
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6), bulbMat);
   head.position.y = 4.6;
   head.userData.isLampHead = true;
   group.add(head);
 
-  const light = new THREE.PointLight(0xffcc66, 0, 12);
+  // PointLight：暖黄色，照射半径 ~14m，白天 intensity=0
+  const light = new THREE.PointLight(0xffcc66, 0, 14, 1.6);
   light.position.y = 4.6;
   group.add(light);
 
   group.position.set(x, 0, z);
+
+  // 注册到日夜循环模块，由 updateTimeOfDay 统一控制
+  if (typeof streetLamps !== 'undefined') {
+    streetLamps.push({ light, bulbMat });
+  }
   return group;
 }
 
