@@ -175,6 +175,31 @@ input[type="range"]::-webkit-slider-thumb {
   font-family: monospace;
 }
 
+/* ===== 自由漫游 UI ===== */
+#roam-crosshair {
+  display: none;
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  color: #78c8ff; font-size: 18px;
+  font-family: monospace; font-weight: 300;
+  text-shadow: 0 0 4px rgba(0,0,0,0.6);
+  z-index: 20; pointer-events: none;
+  user-select: none;
+}
+#roam-hint {
+  display: none;
+  position: fixed; top: 16px; left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 18px; font-size: 12px; color: #cfe8ff;
+  z-index: 20; line-height: 1.6;
+}
+#roam-hint .key {
+  display: inline-block; padding: 1px 6px; margin: 0 1px;
+  background: rgba(120,200,255,0.15);
+  border: 1px solid rgba(120,200,255,0.3); border-radius: 4px;
+  color: #78c8ff; font-family: monospace; font-size: 11px;
+}
+
 /* ===== 加载遮罩 ===== */
 .loader {
   position: fixed; inset: 0; z-index: 100;

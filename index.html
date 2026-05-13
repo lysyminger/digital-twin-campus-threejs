@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>浙江树人学院数字孪生交互系统 · v0.2</title>
+  <title>浙江树人学院数字孪生交互系统 · v0.6</title>
   <link rel="stylesheet" href="./styles/main.css" />
 </head>
 <body>
@@ -22,7 +22,7 @@
   <!-- ===== 顶部标题 ===== -->
   <div class="topbar glass">
     <h1>浙江树人学院 <span class="accent">数字孪生</span> 交互系统</h1>
-    <span class="version">v0.2</span>
+    <span class="version">v0.6</span>
   </div>
 
   <!-- ===== 左侧控制面板 ===== -->
@@ -46,10 +46,11 @@
     <div class="btn-group">
       <button class="btn active" id="view-persp">透视</button>
       <button class="btn" id="view-top">鸟瞰</button>
-      <button class="btn" id="view-tour">漫游</button>
+      <button class="btn" id="view-tour">观光</button>
     </div>
     <div class="btn-group" style="margin-top:8px">
-      <button class="btn" id="reset-btn">重置视角</button>
+      <button class="btn" id="view-roam">自由漫游</button>
+      <button class="btn" id="reset-btn">重置</button>
     </div>
 
     <h2>时间</h2>
@@ -71,6 +72,15 @@
     <p id="info-desc">建筑描述</p>
   </div>
 
+  <!-- ===== 自由漫游：准星 + 提示条（默认隐藏） ===== -->
+  <div id="roam-crosshair">+</div>
+  <div id="roam-hint" class="glass">
+    <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> 移动 ·
+    <span class="key">Shift</span> 加速 ·
+    <span class="key">鼠标</span> 转头 ·
+    <span class="key">Esc</span> 退出
+  </div>
+
   <!-- ===== 底部操作提示 ===== -->
   <div class="hints glass">
     <span class="key">左键</span> 旋转 ·
@@ -85,11 +95,14 @@
 
   <!-- ===== 业务脚本（按依赖顺序加载） ===== -->
   <script src="./js/core.js"></script>
+  <script src="./js/timeOfDay.js"></script>
   <script src="./js/terrain.js"></script>
   <script src="./js/sports.js"></script>
   <script src="./js/buildings.js"></script>
   <script src="./js/vegetation.js"></script>
   <script src="./js/ui.js"></script>
+  <script src="./js/tour.js"></script>
+  <script src="./js/freeRoam.js"></script>
   <script src="./js/minimap.js"></script>
   <script src="./js/main.js"></script>
 </body>
