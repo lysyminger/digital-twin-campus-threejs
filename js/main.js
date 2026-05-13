@@ -20,7 +20,13 @@ function animate(now) {
     fpsTimer = 0;
   }
 
-  controls.update();
+  // 自动观光漫游（tourMode 为真时接管相机）
+  if (typeof updateTour === 'function') updateTour(dt);
+
+  // 漫游模式下跳过 OrbitControls.update（避免基于 spherical 反算覆盖相机位置）
+  if (!(typeof tourMode !== 'undefined' && tourMode)) {
+    controls.update();
+  }
   renderer.render(scene, camera);
 }
 

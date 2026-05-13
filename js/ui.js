@@ -71,6 +71,11 @@ function setView(mode) {
     document.getElementById('view-' + m).classList.toggle('active', m === mode);
   });
 
+  // 切到非漫游模式时，主动退出漫游状态
+  if (mode !== 'tour' && typeof tourMode !== 'undefined' && tourMode) {
+    exitTour();
+  }
+
   if (mode === 'persp') {
     controls.enabled = true;
     animateCamera({ pos: [320, 240, 220], target: [0, 0, 0] });
@@ -78,8 +83,7 @@ function setView(mode) {
     controls.enabled = true;
     animateCamera({ pos: [0, 480, 0.1], target: [0, 0, 0] });
   } else if (mode === 'tour') {
-    controls.enabled = true;
-    animateCamera({ pos: [-100, 30, 200], target: [0, 5, 0] });
+    enterTour();
   }
 }
 
