@@ -6,6 +6,8 @@
 // ===== 点击拾取 =====
 function onPointerDown(e) {
   if (e.target.tagName !== 'CANVAS') return;
+  // 自由漫游下鼠标被锁定，跳过点击拾取
+  if (typeof freeRoamMode !== 'undefined' && freeRoamMode) return;
   pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
   pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
@@ -48,6 +50,10 @@ function bindUI() {
   document.getElementById('view-tour').addEventListener('click',  () => {
     setView(tourMode ? 'persp' : 'tour');
   });
+  // 自由漫游按钮：toggle
+  document.getElementById('view-roam').addEventListener('click',  () => {
+    setView(freeRoamMode ? 'persp' : 'roam');
+  });
   document.getElementById('reset-btn').addEventListener('click',  () => setView('persp'));
 
   // 时间滑块：显示数字 + 触发日夜循环
@@ -70,13 +76,18 @@ function bindUI() {
 // ===== 视角切换 =====
 function setView(mode) {
   currentView = mode;
-  ['persp', 'top', 'tour'].forEach(m => {
-    document.getElementById('view-' + m).classList.toggle('active', m === mode);
+  ['persp', 'top', 'tour', 'roam'].forEach(m => {
+    const btn = document.getElementById('view-' + m);
+    if (btn) btn.classList.toggle('active', m === mode);
   });
 
-  // 切到非漫游模式时，主动退出漫游状态
+  // 切到非观光模式 → 退出观光
   if (mode !== 'tour' && typeof tourMode !== 'undefined' && tourMode) {
     exitTour();
+  }
+  // 切到非自由漫游 → 退出自由漫游
+  if (mode !== 'roam' && typeof freeRoamMode !== 'undefined' && freeRoamMode) {
+    exitFreeRoam();
   }
 
   if (mode === 'persp') {
@@ -87,6 +98,8 @@ function setView(mode) {
     animateCamera({ pos: [0, 480, 0.1], target: [0, 0, 0] });
   } else if (mode === 'tour') {
     enterTour();
+  } else if (mode === 'roam') {
+    enterFreeRoam();
   }
 }
 
