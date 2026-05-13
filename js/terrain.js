@@ -188,15 +188,9 @@ function createRoadStrip(points, width, mat, yVal) {
 }
 
 // 黄色虚线（道路中心线）
-// polygonOffset factor -4 比沥青 (-2) 更强，避免人眼高度下远处贴地掠射 z-fighting
 function createDashedCenterLine(points) {
   const group = new THREE.Group();
-  const mat = new THREE.MeshBasicMaterial({
-    color: 0xd8c75a,
-    polygonOffset: true,
-    polygonOffsetFactor: -4,
-    polygonOffsetUnits: -4
-  });
+  const mat = new THREE.MeshBasicMaterial({ color: 0xd8c75a });
 
   for (let i = 0; i < points.length - 1; i++) {
     const [x1, z1] = points[i], [x2, z2] = points[i + 1];
@@ -207,7 +201,7 @@ function createDashedCenterLine(points) {
     let d = 1;
     while (d + 2 <= segLen) {
       const dash = new THREE.Mesh(new THREE.BoxGeometry(2, 0.005, 0.2), mat);
-      dash.position.set(x1 + ux * (d + 1), 0.05, z1 + uz * (d + 1));
+      dash.position.set(x1 + ux * (d + 1), 0.03, z1 + uz * (d + 1));
       dash.rotation.y = -angle;
       group.add(dash);
       d += 4;
@@ -217,15 +211,9 @@ function createDashedCenterLine(points) {
 }
 
 // 白色边线（ribbon 条带，更粗更明显）
-// polygonOffset factor -4 同中心虚线，避免远处被沥青遮住
 function createRoadEdgeLines(points, width) {
   const group = new THREE.Group();
-  const edgeMat = new THREE.MeshBasicMaterial({
-    color: 0xeeeeee,
-    polygonOffset: true,
-    polygonOffsetFactor: -4,
-    polygonOffsetUnits: -4
-  });
+  const edgeMat = new THREE.MeshBasicMaterial({ color: 0xeeeeee });
   const n = points.length, hw = width / 2;
 
   [-1, 1].forEach(side => {
@@ -237,7 +225,7 @@ function createRoadEdgeLines(points, width) {
       else [nx, nz] = cornerNormal(points[i - 1], points[i], points[i + 1]);
       edgePts.push([points[i][0] + nx * hw * side, points[i][1] + nz * hw * side]);
     }
-    const strip = createRoadStrip(edgePts, 0.3, edgeMat, 0.05);
+    const strip = createRoadStrip(edgePts, 0.3, edgeMat, 0.03);
     group.add(strip);
   });
   return group;
