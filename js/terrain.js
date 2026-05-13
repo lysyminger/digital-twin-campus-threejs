@@ -14,7 +14,7 @@ const CAMPUS_ROADS = [
   { id: "ROAD-CENTER-EW", name: "校园中央东西向主路", type: "main", width: 7,
     points: [[-245,-12],[-175,-10],[-105,-8],[-35,-6],[45,-5],[115,-4],[190,-2],[260,2],[330,10]] },
   { id: "ROAD-SOUTH-EW", name: "南侧校内环路", type: "main", width: 7,
-    points: [[-210,95],[-120,95],[-40,98],[45,100],[125,102],[210,105],[285,120],[325,145]] },
+    points: [[-210,95],[-150,70],[-80,45],[-20,42],[40,42],[100,50],[160,80],[210,105],[285,120],[325,145]] },
   { id: "ROAD-SOUTH-AXIS", name: "南门中轴道路", type: "main", width: 8,
     points: [[-2,225],[-2,185],[-2,145],[-2,105],[-2,76]] },
   { id: "ROAD-SOUTH-LOOP", name: "南侧教学区环路", type: "loop", width: 6,
@@ -281,50 +281,109 @@ function createCampusRoads() {
   });
 }
 
-// ===== 绿地 =====
-function createGreenAreas() {
-  const mat = overlayMat(0x6a9a5a, 1);
-  const gardenMat = overlayMat(0x5d8f4e, 1);
-  const list = [
-    // 图书馆前广场草坪
-    { name: '图书馆前广场草坪', geom: new THREE.PlaneGeometry(60, 25), x: -4, z: 58 },
+// ===== 统一草坪数据（合并 terrain + vegetation 去重后） =====
+const GRASS_DATA = [
+  { id:2,  name:'南门右侧草坪',         type:'rect', x:46,  z:207, w:70, h:35, color:0x6a9a5a },
+  { id:3,  name:'南门左侧草坪',         type:'rect', x:-47, z:209, w:70, h:35, color:0x6a9a5a },
+  { id:4,  name:'东侧教学楼内庭草坪',   type:'rect', x:62,  z:161, w:40, h:24, color:0x6a9a5a },
+  { id:5,  name:'西侧教学楼内庭草坪',   type:'rect', x:-62, z:161, w:40, h:24, color:0x6a9a5a },
+  { id:10, name:'B1北侧草坪',           type:'rect', x:73,  z:85,  w:28, h:10, color:0x6a9a5a },
+  { id:11, name:'B2北侧草坪',           type:'rect', x:-71, z:89,  w:28, h:10, color:0x6a9a5a },
+  { id:12, name:'教学区东侧边缘绿地',   type:'rect', x:96,  z:160, w:12, h:90, color:0x6a9a5a },
+  { id:13, name:'教学区西侧边缘绿地',   type:'rect', x:-96, z:160, w:12, h:90, color:0x6a9a5a },
+  { id:14, name:'右侧过渡草坪',         type:'rect', x:70,  z:120, w:30, h:14, color:0x6a9a5a },
+  { id:15, name:'左侧过渡草坪',         type:'rect', x:-68, z:120, w:30, h:14, color:0x6a9a5a },
+  { id:100, name:'图书馆东侧绿地',      type:'rect', x:132, z:40,  w:80, h:60, color:0x6a9a5a },
+  { id:102, name:'体育馆周边绿地',      type:'rect', x:207, z:-159,w:60, h:80, color:0x6a9a5a },
+  { id:103, name:'生活区绿地',          type:'rect', x:217, z:44,  w:60, h:60, color:0x6a9a5a },
+  { id:104, name:'图书馆前草坪（左）',  type:'rect', x:-18, z:60,  w:30, h:20, color:0x6a9a5a },
+  { id:105, name:'图书馆前草坪（右）',  type:'rect', x:17,  z:60,  w:30, h:20, color:0x6a9a5a },
+  { id:106, name:'核心区草坪（左）',    type:'rect', x:-18, z:85,  w:30, h:20, color:0x6a9a5a },
+  { id:107, name:'核心区草坪（右）',    type:'rect', x:17,  z:85,  w:30, h:20, color:0x6a9a5a },
+  { id:108, name:'12号楼西侧绿地',     type:'rect', x:90,  z:-129,w:10, h:20, color:0x6a9a5a },
+];
+let _grassNextId = 100;
+const greenMeshes = [];  // 与 GRASS_DATA 平行，供编辑器操作
 
-    // 南门入口右侧大草坪（主轴与A1之间）
-    { name: '南门右侧草坪', geom: new THREE.PlaneGeometry(48, 35), x: 35, z: 198 },
-    // 南门入口左侧大草坪（主轴与A2之间）
-    { name: '南门左侧草坪', geom: new THREE.PlaneGeometry(48, 35), x: -38, z: 198 },
-
-    // A1与A3之间内庭草坪（右侧）
-    { name: '东侧教学楼内庭草坪', geom: new THREE.PlaneGeometry(40, 24), x: 67, z: 161 },
-    // A2与A4之间内庭草坪（左侧）
-    { name: '西侧教学楼内庭草坪', geom: new THREE.PlaneGeometry(40, 24), x: -63, z: 161 },
-
-    // 中央花园草坪（四块对称）
-    { name: '中央花园草坪（右上）', geom: new THREE.PlaneGeometry(14, 12), x: 15, z: 138, color: gardenMat },
-    { name: '中央花园草坪（左上）', geom: new THREE.PlaneGeometry(14, 12), x: -17, z: 138, color: gardenMat },
-    { name: '中央花园草坪（右下）', geom: new THREE.PlaneGeometry(14, 12), x: 15, z: 153, color: gardenMat },
-    { name: '中央花园草坪（左下）', geom: new THREE.PlaneGeometry(14, 12), x: -17, z: 153, color: gardenMat },
-
-    // B1周边草坪（右上）
-    { name: 'B1北侧草坪', geom: new THREE.PlaneGeometry(28, 10), x: 73, z: 85 },
-    // B2周边草坪（左上）
-    { name: 'B2北侧草坪', geom: new THREE.PlaneGeometry(28, 10), x: -71, z: 89 },
-
-    // 环路外侧边缘草坪
-    { name: '教学区东侧边缘绿地', geom: new THREE.PlaneGeometry(12, 90), x: 96, z: 160 },
-    { name: '教学区西侧边缘绿地', geom: new THREE.PlaneGeometry(12, 90), x: -96, z: 160 },
-
-    // A3/A4与B1/B2之间过渡草坪
-    { name: '右侧过渡草坪', geom: new THREE.PlaneGeometry(30, 14), x: 70, z: 120 },
-    { name: '左侧过渡草坪', geom: new THREE.PlaneGeometry(30, 14), x: -68, z: 120 },
-  ];
-  list.forEach(({ name, geom, x, z, color }) => {
-    const m = new THREE.Mesh(geom, color || mat);
-    m.rotation.x = -Math.PI / 2;
-    m.position.set(x, 0.01, z);
-    m.receiveShadow = true;
-    m.userData = { name, type: '绿地', desc: '校园绿化区域。' };
-    layerGroups.vegetation.add(m);
-    interactables.push(m);
+// ===== 单块草坪 mesh 构建 =====
+function buildGrassMesh(d) {
+  var geom = (d.type === 'circle')
+    ? new THREE.CircleGeometry(d.r || 20, 32)
+    : new THREE.PlaneGeometry(d.w || 20, d.h || 20);
+  var mat = new THREE.MeshStandardMaterial({
+    color: d.color || 0x6a9a5a, roughness: 0.95,
+    polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1
   });
+  var mesh = new THREE.Mesh(geom, mat);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.set(d.x, 0.01, d.z);
+  mesh.receiveShadow = true;
+  mesh.userData = { name: d.name, type: '绿地', desc: '校园绿化区域。', _grassId: d.id };
+  return mesh;
+}
+
+// ===== 绿地主入口 =====
+function createGreenAreas() {
+  GRASS_DATA.forEach(function(d) {
+    var mesh = buildGrassMesh(d);
+    greenMeshes.push(mesh);
+    layerGroups.vegetation.add(mesh);
+    interactables.push(mesh);
+  });
+}
+
+// ===== 中央广场国旗杆 =====
+function createFlagpole() {
+  var group = new THREE.Group();
+  var poleH = 18;  // 旗杆高 18m
+
+  // 旗杆（银色金属圆柱）
+  var poleMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.3, metalness: 0.7 });
+  var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, poleH, 8), poleMat);
+  pole.position.y = poleH / 2;
+  pole.castShadow = true;
+  group.add(pole);
+
+  // 旗杆底座（灰色圆台）
+  var baseMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.6 });
+  var base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.0, 0.6, 12), baseMat);
+  base.position.y = 0.3;
+  base.castShadow = true;
+  group.add(base);
+
+  // 旗杆顶球
+  var ball = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), poleMat);
+  ball.position.y = poleH + 0.2;
+  group.add(ball);
+
+  // 国旗（红色长方形平面，略微有风飘动感）
+  var flagW = 3.6, flagH = 2.4;
+  var flagGeo = new THREE.PlaneGeometry(flagW, flagH, 8, 1);
+  // 让旗面有轻微波浪
+  var posAttr = flagGeo.attributes.position;
+  for (var i = 0; i < posAttr.count; i++) {
+    var fx = posAttr.getX(i);
+    // 越远离旗杆，波浪越大
+    var wave = Math.sin((fx / flagW) * Math.PI * 2) * 0.15 * ((fx + flagW / 2) / flagW);
+    posAttr.setZ(i, wave);
+  }
+  posAttr.needsUpdate = true;
+  flagGeo.computeVertexNormals();
+
+  var flagMat = new THREE.MeshStandardMaterial({
+    color: 0xde2910, roughness: 0.7, side: THREE.DoubleSide
+  });
+  var flag = new THREE.Mesh(flagGeo, flagMat);
+  flag.position.set(flagW / 2 + 0.15, poleH - flagH / 2 - 0.3, 0);
+  flag.castShadow = true;
+  group.add(flag);
+
+  // 放置在中央广场中心（四块草坪 104-107 的几何中心）
+  group.position.set(0, 0, 72);
+  group.userData = {
+    name: '国旗杆', type: '设施',
+    desc: '中央广场国旗杆，位于图书馆南侧广场中心。'
+  };
+  interactables.push(group);
+  layerGroups.facilities.add(group);
 }

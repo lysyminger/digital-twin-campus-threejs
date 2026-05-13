@@ -30,6 +30,9 @@ function animate(now) {
                  (typeof freeRoamMode !== 'undefined' && freeRoamMode);
   if (!inRoam) controls.update();
   renderer.render(scene, camera);
+
+  // 小地图每帧刷新
+  drawMinimap();
 }
 
 // ===== 启动 =====
@@ -41,16 +44,16 @@ function boot() {
   createCampusRoads();
   createGreenAreas();
 
-  // 运动设施
+  // 运动设施 + 国旗杆
   createTrack();
   createGrandstand();
   createBasketballCourts();
+  createFlagpole();
 
   // 建筑
   createBuildings();
 
   // 植被与设施
-  createGreenAreaPatches();
   createTrees();
   createStreetLamps();
   createBenches();
@@ -58,6 +61,8 @@ function boot() {
   // UI
   bindUI();
   bindFreeRoam();   // 注册 PointerLock / mousemove / keydown 全局事件
+  initMinimap();    // 初始化小地图
+  initGreenEditor();  // 草坪编辑器（按 G 键打开）
   updateTimeDisplay(12);
   updateTimeOfDay(12);   // 初始化为正午
 
