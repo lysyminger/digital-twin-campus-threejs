@@ -110,7 +110,8 @@ function _geBuildPanel() {
 <div id="ge-list"></div>\
 <div id="ge-props"></div>\
 <div class="ge-toolbar" style="margin-top:10px">\
-  <button class="ge-btn primary" id="ge-export">导出代码</button>\
+  <button class="ge-btn primary" id="ge-save">💾 保存</button>\
+  <button class="ge-btn" id="ge-export">导出代码</button>\
   <button class="ge-btn" id="ge-copy">复制到剪贴板</button>\
 </div>\
 <div id="ge-export-box"><pre id="ge-export-code"></pre></div>\
@@ -122,6 +123,7 @@ function _geBuildPanel() {
   document.getElementById('ge-add-rect').addEventListener('click', function() { _geAddGrass('rect'); });
   document.getElementById('ge-add-circle').addEventListener('click', function() { _geAddGrass('circle'); });
   document.getElementById('ge-del').addEventListener('click', _geDeleteSelected);
+  document.getElementById('ge-save').addEventListener('click', _geSave);
   document.getElementById('ge-export').addEventListener('click', _geExport);
   document.getElementById('ge-copy').addEventListener('click', _geCopyCode);
 
@@ -334,6 +336,11 @@ function _geDeleteSelected() {
 }
 
 // ===== 导出代码 =====
+// ===== 保存到 localStorage =====
+function _geSave() {
+  editorSaveAll();
+}
+
 function _geExport() {
   var box = document.getElementById('ge-export-box');
   var codeEl = document.getElementById('ge-export-code');
@@ -435,6 +442,16 @@ function _geOnUp() {
 // ===== 开关编辑器 =====
 function toggleGreenEditor() {
   _geActive = !_geActive;
+  if (_geActive) {
+    // 互斥：关闭其他编辑器
+    if (activeEditor && activeEditor !== 'green') {
+      if (activeEditor === 'building' && typeof closeBuildingEditor === 'function') closeBuildingEditor();
+      if (activeEditor === 'road' && typeof closeRoadEditor === 'function') closeRoadEditor();
+    }
+    activeEditor = 'green';
+  } else {
+    activeEditor = null;
+  }
   if (_gePanel) _gePanel.classList.toggle('show', _geActive);
   if (_geActive) {
     _geRefreshList();
@@ -449,6 +466,17 @@ function toggleGreenEditor() {
     var box = document.getElementById('ge-export-box');
     if (box) box.style.display = 'none';
   }
+}
+// 外部调用：关闭草坪编辑器（被其他编辑器互斥时用）
+function closeGreenEditor() {
+  if (!_geActive) return;
+  _geActive = false;
+  activeEditor = null;
+  if (_gePanel) _gePanel.classList.remove('show');
+  _geSelIdx = -1;
+  _geUpdateHighlight();
+  var box = document.getElementById('ge-export-box');
+  if (box) box.style.display = 'none';
 }
 
 // ===== 初始化 =====

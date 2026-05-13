@@ -39,6 +39,9 @@ function animate(now) {
 function boot() {
   initScene();
 
+  // 从 localStorage 恢复编辑器存档（如果有的话）
+  editorLoadAll();
+
   // 地形
   createGround();
   createCampusRoads();
@@ -62,7 +65,9 @@ function boot() {
   bindUI();
   bindFreeRoam();   // 注册 PointerLock / mousemove / keydown 全局事件
   initMinimap();    // 初始化小地图
-  initGreenEditor();  // 草坪编辑器（按 G 键打开）
+  initGreenEditor();     // 草坪编辑器（按 G 键打开）
+  initBuildingEditor();  // 建筑编辑器（按 B 键打开）
+  initRoadEditor();      // 道路编辑器（按 R 键打开）
   updateTimeDisplay(12);
   updateTimeOfDay(12);   // 初始化为正午
 

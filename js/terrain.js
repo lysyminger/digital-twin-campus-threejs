@@ -262,6 +262,8 @@ function createGround() {
 }
 
 // ===== 路网主入口 =====
+const roadMeshes = [];   // 与 CAMPUS_ROADS 平行，编辑器用
+
 function createCampusRoads() {
   const asphaltMat = createAsphaltMaterial();
 
@@ -278,6 +280,7 @@ function createCampusRoads() {
     };
     layerGroups.roads.add(group);
     interactables.push(group);
+    roadMeshes.push(group);
   });
 }
 

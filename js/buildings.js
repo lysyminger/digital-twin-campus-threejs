@@ -289,5 +289,6 @@ function createBuildings() {
     };
     layerGroups.buildings.add(group);
     interactables.push(group);
+    buildingMeshes.push(group);
   });
 }
