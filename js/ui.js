@@ -47,9 +47,11 @@ function bindUI() {
   document.getElementById('view-tour').addEventListener('click',  () => setView('tour'));
   document.getElementById('reset-btn').addEventListener('click',  () => setView('persp'));
 
-  // 时间滑块
+  // 时间滑块：显示数字 + 触发日夜循环
   document.getElementById('time-slider').addEventListener('input', e => {
-    updateTimeDisplay(parseFloat(e.target.value));
+    const hour = parseFloat(e.target.value);
+    updateTimeDisplay(hour);
+    updateTimeOfDay(hour);
   });
 
   // 信息卡关闭
