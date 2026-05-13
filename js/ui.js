@@ -6,6 +6,8 @@
 // ===== 点击拾取 =====
 function onPointerDown(e) {
   if (e.target.tagName !== 'CANVAS') return;
+  // 自由漫游下鼠标被锁定，跳过点击拾取
+  if (typeof freeRoamMode !== 'undefined' && freeRoamMode) return;
   pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
   pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
@@ -44,12 +46,21 @@ function bindUI() {
   // 视角按钮
   document.getElementById('view-persp').addEventListener('click', () => setView('persp'));
   document.getElementById('view-top').addEventListener('click',   () => setView('top'));
-  document.getElementById('view-tour').addEventListener('click',  () => setView('tour'));
+  // 漫游按钮：再次点击切回透视模式（toggle 语义）
+  document.getElementById('view-tour').addEventListener('click',  () => {
+    setView(tourMode ? 'persp' : 'tour');
+  });
+  // 自由漫游按钮：toggle
+  document.getElementById('view-roam').addEventListener('click',  () => {
+    setView(freeRoamMode ? 'persp' : 'roam');
+  });
   document.getElementById('reset-btn').addEventListener('click',  () => setView('persp'));
 
-  // 时间滑块
+  // 时间滑块：显示数字 + 触发日夜循环
   document.getElementById('time-slider').addEventListener('input', e => {
-    updateTimeDisplay(parseFloat(e.target.value));
+    const hour = parseFloat(e.target.value);
+    updateTimeDisplay(hour);
+    updateTimeOfDay(hour);
   });
 
   // 信息卡关闭
@@ -65,9 +76,19 @@ function bindUI() {
 // ===== 视角切换 =====
 function setView(mode) {
   currentView = mode;
-  ['persp', 'top', 'tour'].forEach(m => {
-    document.getElementById('view-' + m).classList.toggle('active', m === mode);
+  ['persp', 'top', 'tour', 'roam'].forEach(m => {
+    const btn = document.getElementById('view-' + m);
+    if (btn) btn.classList.toggle('active', m === mode);
   });
+
+  // 切到非观光模式 → 退出观光
+  if (mode !== 'tour' && typeof tourMode !== 'undefined' && tourMode) {
+    exitTour();
+  }
+  // 切到非自由漫游 → 退出自由漫游
+  if (mode !== 'roam' && typeof freeRoamMode !== 'undefined' && freeRoamMode) {
+    exitFreeRoam();
+  }
 
   if (mode === 'persp') {
     controls.enabled = true;
@@ -76,8 +97,9 @@ function setView(mode) {
     controls.enabled = true;
     animateCamera({ pos: [0, 480, 0.1], target: [0, 0, 0] });
   } else if (mode === 'tour') {
-    controls.enabled = true;
-    animateCamera({ pos: [-100, 30, 200], target: [0, 5, 0] });
+    enterTour();
+  } else if (mode === 'roam') {
+    enterFreeRoam();
   }
 }
 

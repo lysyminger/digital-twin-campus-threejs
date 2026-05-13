@@ -20,7 +20,15 @@ function animate(now) {
     fpsTimer = 0;
   }
 
-  controls.update();
+  // 自动观光漫游（tourMode 为真时接管相机）
+  if (typeof updateTour === 'function') updateTour(dt);
+  // 自由漫游（freeRoamMode 为真时接管相机）
+  if (typeof updateFreeRoam === 'function') updateFreeRoam(dt);
+
+  // 两种漫游模式下都跳过 OrbitControls.update（避免基于 spherical 反算覆盖相机位置）
+  const inRoam = (typeof tourMode !== 'undefined' && tourMode) ||
+                 (typeof freeRoamMode !== 'undefined' && freeRoamMode);
+  if (!inRoam) controls.update();
   renderer.render(scene, camera);
 }
 
@@ -42,12 +50,16 @@ function boot() {
   createBuildings();
 
   // 植被与设施
+  createGreenAreaPatches();
   createTrees();
   createStreetLamps();
+  createBenches();
 
   // UI
   bindUI();
+  bindFreeRoam();   // 注册 PointerLock / mousemove / keydown 全局事件
   updateTimeDisplay(12);
+  updateTimeOfDay(12);   // 初始化为正午
 
   requestAnimationFrame(animate);
   setTimeout(() => document.getElementById('loader').classList.add('hide'), 300);
