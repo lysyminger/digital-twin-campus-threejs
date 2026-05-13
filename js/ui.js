@@ -44,7 +44,10 @@ function bindUI() {
   // 视角按钮
   document.getElementById('view-persp').addEventListener('click', () => setView('persp'));
   document.getElementById('view-top').addEventListener('click',   () => setView('top'));
-  document.getElementById('view-tour').addEventListener('click',  () => setView('tour'));
+  // 漫游按钮：再次点击切回透视模式（toggle 语义）
+  document.getElementById('view-tour').addEventListener('click',  () => {
+    setView(tourMode ? 'persp' : 'tour');
+  });
   document.getElementById('reset-btn').addEventListener('click',  () => setView('persp'));
 
   // 时间滑块：显示数字 + 触发日夜循环
