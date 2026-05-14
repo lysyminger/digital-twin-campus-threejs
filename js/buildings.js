@@ -160,10 +160,11 @@ function getWallMat(color) {
 const roofMat = new THREE.MeshStandardMaterial({ color: 0x404040, roughness: 0.7 });
 const windowMat = new THREE.MeshStandardMaterial({ color: 0x3a5a7a, roughness: 0.3, metalness: 0.2 });
 // 夜间亮灯材质：暖黄发光
+// emissiveIntensity 调低至 0.55 避免远处发光块和暗墙视觉融合
 const windowMatOn = new THREE.MeshStandardMaterial({
   color: 0xffd080,
   emissive: 0xffa040,
-  emissiveIntensity: 0.8,
+  emissiveIntensity: 0.55,
   roughness: 0.3
 });
 // 窗户注册表，由 timeOfDay.js 的 updateTimeOfDay 统一控制夜间亮灯
@@ -171,7 +172,9 @@ const windowMeshes = [];
 
 // ===== 添加窗户（仅 high priority） =====
 function addWindows(group, info) {
-  const floors = Math.round(info.h / 4);
+  // floor 而不是 round，避免最高一层窗户冲出屋顶
+  // (h=10/14/18 这些半4倍数高度，round 会算出多一层，wy 超过 info.h)
+  const floors = Math.floor(info.h / 4);
   const faces = [
     { axis: 'x', sign: 1,  len: info.d, pos: [info.w / 2 + 0.05, 0, 0], rot: [0, Math.PI / 2, 0] },
     { axis: 'x', sign: -1, len: info.d, pos: [-info.w / 2 - 0.05, 0, 0], rot: [0, -Math.PI / 2, 0] },
