@@ -19,7 +19,8 @@
 双击 index.html → Chrome / Edge 自动打开
 ```
 
-> 如果有 GLB 模型需要加载，先运行一次 `tools/build_glb_cache.bat` 生成缓存。
+> **首次运行 / 新增 GLB 后必读**：双击 `tools/build_glb_cache.bat` 把 `assets/*.glb` 转为 `data/glb_cache.js` 缓存（`file://` 协议读不到本地 GLB，必须走 base64 缓存）。
+> 如果新放进 `assets/` 的 GLB 没出现，多半是忘了重跑这个工具——控制台会有 `[AutoGLB] "xxx.glb" 不在 data/glb_cache.js 缓存中` 的提示。
 
 ### 方式二：HTTP 服务器（编辑调试用）
 
