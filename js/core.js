@@ -96,7 +96,7 @@ function initScene() {
 
 // ===== 编辑器统一保存/加载（JSON 文件下载 + 导入） =====
 
-// 导出为 location.js 文件下载（script 标签加载兼容 file://）
+// 导出为 data/location.js 文件下载（script 标签加载兼容 file://）
 function editorSaveAll() {
   var data = {
     _ver: 1,
@@ -117,7 +117,7 @@ function editorSaveAll() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  _editorToast('✅ 已下载 location.js，放到项目根目录即可');
+  _editorToast('✅ 已下载 location.js，放到 data/ 目录即可');
 }
 
 // 手动导入存档文件（支持 .js 和 .json）

@@ -1,12 +1,13 @@
 """
-将 assets/ 下所有 .glb 文件转为 base64，写入 glb_cache.js
-双击运行或命令行 python build_glb_cache.py
+将 assets/ 下所有 .glb 文件转为 base64，写入 data/glb_cache.js
+双击 build_glb_cache.bat 运行
 生成的 glb_cache.js 通过 <script> 标签加载，file:// 协议也能用
 """
 import os, base64, glob
 
-ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets')
-OUT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'glb_cache.js')
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ASSETS_DIR = os.path.join(ROOT_DIR, 'assets')
+OUT_FILE = os.path.join(ROOT_DIR, 'data', 'glb_cache.js')
 
 files = glob.glob(os.path.join(ASSETS_DIR, '*.glb'))
 
@@ -23,8 +24,9 @@ else:
         print('  OK {} ({:.0f} KB)'.format(name, size_kb))
 
     js = 'var GLB_CACHE = {\n' + ',\n'.join(entries) + '\n};\n'
+    os.makedirs(os.path.dirname(OUT_FILE), exist_ok=True)
     with open(OUT_FILE, 'w', encoding='utf-8') as f:
         f.write(js)
-    print('\n已生成 glb_cache.js ({:.0f} KB)'.format(os.path.getsize(OUT_FILE) / 1024))
+    print('\n已生成 data/glb_cache.js ({:.0f} KB)'.format(os.path.getsize(OUT_FILE) / 1024))
 
 input('\n按回车关闭...')

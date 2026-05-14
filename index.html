@@ -103,9 +103,9 @@
   <script src="./vendor/OrbitControls.js"></script>
 
   <!-- ===== 存档数据（location.js 存在则覆盖默认数据，不存在则忽略） ===== -->
-  <script src="./location.js" onerror="window.LOCATION_DATA=null"></script>
-  <!-- ===== GLB 模型缓存（build_glb_cache.bat 生成，file:// 也能加载） ===== -->
-  <script src="./glb_cache.js" onerror="window.GLB_CACHE={}"></script>
+  <script src="./data/location.js" onerror="window.LOCATION_DATA=null"></script>
+  <!-- ===== GLB 模型缓存（tools/build_glb_cache.bat 生成，file:// 也能加载） ===== -->
+  <script src="./data/glb_cache.js" onerror="window.GLB_CACHE={}"></script>
 
   <!-- ===== 业务脚本（按依赖顺序加载） ===== -->
   <script src="./js/core.js"></script>

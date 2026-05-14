@@ -356,7 +356,7 @@ function _beLoadGLB(idx) {
     _beProcessGLTF(gltf, filename, idx);
   }, undefined, function(err) {
     console.warn('[BuildingEditor] GLB 加载失败:', filename, err);
-    status.innerHTML = '<span class="be-glb-err">✘ 加载失败: ' + filename + '<br>file:// 需先运行 build_glb_cache.bat</span>';
+    status.innerHTML = '<span class="be-glb-err">✘ 加载失败: ' + filename + '<br>file:// 需先运行 tools/build_glb_cache.bat</span>';
   });
 }
 
