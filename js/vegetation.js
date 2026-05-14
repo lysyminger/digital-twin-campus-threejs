@@ -201,9 +201,10 @@ var TREE_DATA = _generateTreeData();
 var LAMP_DATA = [];
 function _generateLampData() {
   var lamps = [];
-  var spacing = 35;
+  var spacing = 60;
   var offset = 4;
   CAMPUS_ROADS.forEach(function(road) {
+    if (road.type === 'outer') return;
     if (road.type === 'loop' && road.width < 5) return;
     var pts = road.points;
     var accumulated = 0;
