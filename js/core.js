@@ -200,6 +200,12 @@ function _editorRebuildAll() {
   createCampusRoads();
   createTrees();
 
+  // 重建后重跑当前时间，恢复夜间窗户/路灯亮灯状态
+  if (typeof updateTimeOfDay === 'function') {
+    var slider = document.getElementById('time-slider');
+    if (slider) updateTimeOfDay(parseFloat(slider.value));
+  }
+
   _editorToast('✅ 场景重建完成');
 }
 

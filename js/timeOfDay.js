@@ -77,4 +77,17 @@ function updateTimeOfDay(hour) {
       s.bulbMat.emissiveIntensity = 0;
     });
   }
+
+  // ---- 5. 窗户夜间亮灯（约 65% 随机点亮，比路灯早半小时打开） ----
+  // 用索引做伪随机（同一窗户每次状态一致，无闪烁）
+  if (typeof windowMeshes !== 'undefined') {
+    const isNightWindow = (hour < 6 || hour > 18.5);
+    if (isNightWindow) {
+      windowMeshes.forEach((win, i) => {
+        win.material = ((i * 7 + 13) % 100 < 65) ? windowMatOn : windowMat;
+      });
+    } else {
+      windowMeshes.forEach(win => { win.material = windowMat; });
+    }
+  }
 }

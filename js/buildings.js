@@ -159,6 +159,15 @@ function getWallMat(color) {
 }
 const roofMat = new THREE.MeshStandardMaterial({ color: 0x404040, roughness: 0.7 });
 const windowMat = new THREE.MeshStandardMaterial({ color: 0x3a5a7a, roughness: 0.3, metalness: 0.2 });
+// 夜间亮灯材质：暖黄发光
+const windowMatOn = new THREE.MeshStandardMaterial({
+  color: 0xffd080,
+  emissive: 0xffa040,
+  emissiveIntensity: 0.8,
+  roughness: 0.3
+});
+// 窗户注册表，由 timeOfDay.js 的 updateTimeOfDay 统一控制夜间亮灯
+const windowMeshes = [];
 
 // ===== 添加窗户（仅 high priority） =====
 function addWindows(group, info) {
@@ -188,6 +197,7 @@ function addWindows(group, info) {
         }
         win.rotation.set(...face.rot);
         group.add(win);
+        windowMeshes.push(win);   // 注册到全局表供日夜循环切换
       }
     }
   });
@@ -279,6 +289,7 @@ function buildStructure(info) {
 
 // ===== 建筑生成主入口 =====
 function createBuildings() {
+  windowMeshes.length = 0;   // 编辑器重建场景时清空注册表
   BUILDING_DATA.forEach(info => {
     const group = buildStructure(info);
     group.userData = {
