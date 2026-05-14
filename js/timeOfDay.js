@@ -40,7 +40,14 @@ function updateTimeOfDay(hour) {
   } else {
     skyColor = SKY_NIGHT.clone();                                                // 深夜
   }
-  scene.background = skyColor;
+  // 天空：若 sky.js 已初始化则用穹顶，否则回退纯色背景
+  if (typeof updateSkyDome === 'function' && skyDome) {
+    scene.background = null;
+    updateSkyDome(hour);
+  } else {
+    scene.background = skyColor;
+  }
+  // 雾色始终跟随地平线色（让远处建筑融入天空底部）
   if (scene.fog) scene.fog.color.copy(skyColor);
 
   // ---- 3. 光照强度 ----

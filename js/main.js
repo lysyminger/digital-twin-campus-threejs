@@ -29,6 +29,10 @@ function animate(now) {
   const inRoam = (typeof tourMode !== 'undefined' && tourMode) ||
                  (typeof freeRoamMode !== 'undefined' && freeRoamMode);
   if (!inRoam) controls.update();
+
+  // 天空云朵每帧飘动
+  if (typeof updateClouds === 'function') updateClouds(dt);
+
   renderer.render(scene, camera);
 
   // 小地图每帧刷新
@@ -38,6 +42,9 @@ function animate(now) {
 // ===== 启动 =====
 function boot() {
   initScene();
+
+  // 天空穹顶（要在 updateTimeOfDay 之前，让 timeOfDay 检测到 skyDome 存在）
+  initSkyDome();
 
   // 从 location.js 恢复编辑器存档（如果有的话）
   editorLoadAll();
