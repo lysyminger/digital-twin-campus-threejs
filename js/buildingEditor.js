@@ -15,6 +15,19 @@ var _beIsect = new THREE.Vector3();
 var _beDragOffset = new THREE.Vector2();
 var _beGLBCache = {};   // filename → THREE.Group（克隆源）
 
+// ===== GLTFLoader + DRACOLoader（全局复用） =====
+var _beGLTFLoader = null;
+function _beGetLoader() {
+  if (_beGLTFLoader) return _beGLTFLoader;
+  _beGLTFLoader = new THREE.GLTFLoader();
+  if (typeof THREE.DRACOLoader !== 'undefined') {
+    var draco = new THREE.DRACOLoader();
+    draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
+    _beGLTFLoader.setDRACOLoader(draco);
+  }
+  return _beGLTFLoader;
+}
+
 // ===== 样式注入 =====
 function _beInjectCSS() {
   var style = document.createElement('style');
@@ -337,7 +350,7 @@ function _beLoadGLB(idx) {
     return;
   }
 
-  var loader = new THREE.GLTFLoader();
+  var loader = _beGetLoader();
 
   // 2. glb_cache.js base64 缓存（file:// 也能用）
   if (typeof GLB_CACHE !== 'undefined' && GLB_CACHE[filename]) {
@@ -614,7 +627,7 @@ function _autoLoadGLBFromData() {
   var filenames = Object.keys(needed);
   if (filenames.length === 0) return;
 
-  var loader = new THREE.GLTFLoader();
+  var loader = _beGetLoader();
   filenames.forEach(function(filename) {
     var idxList = needed[filename];
 

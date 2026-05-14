@@ -197,17 +197,37 @@ function _generateTreeData() {
 
 var TREE_DATA = _generateTreeData();
 
-// ===== 路灯数据 =====
-const LAMP_DATA = [
-  // 南侧主路
-  [-300, 230], [-180, 230], [-60, 230], [60, 230], [180, 230], [300, 230],
-  // 中央东西主路
-  [-220, 0], [-120, 0], [-30, 0], [45, 0], [115, 0], [190, 0], [260, 0],
-  // 北侧主路
-  [-200, -110], [-100, -110], [0, -110], [100, -110], [200, -110], [280, -100],
-  // 南门中轴
-  [-2, 200], [-2, 165], [-2, 130], [-2, 95], [-2, 70],
-];
+// ===== 路灯数据（沿实际道路生成） =====
+var LAMP_DATA = [];
+function _generateLampData() {
+  var lamps = [];
+  var spacing = 35;
+  var offset = 4;
+  CAMPUS_ROADS.forEach(function(road) {
+    if (road.type === 'loop' && road.width < 5) return;
+    var pts = road.points;
+    var accumulated = 0;
+    for (var i = 1; i < pts.length; i++) {
+      var dx = pts[i][0] - pts[i-1][0];
+      var dz = pts[i][1] - pts[i-1][1];
+      var segLen = Math.sqrt(dx*dx + dz*dz);
+      if (segLen < 1) continue;
+      var nx = -dz / segLen;
+      var nz = dx / segLen;
+      var steps = Math.floor((accumulated + segLen) / spacing) - Math.floor(accumulated / spacing);
+      for (var s = 0; s < steps; s++) {
+        var along = (Math.floor(accumulated / spacing) + s + 1) * spacing - accumulated;
+        var t = along / segLen;
+        if (t < 0 || t > 1) continue;
+        var x = pts[i-1][0] + dx * t + nx * offset;
+        var z = pts[i-1][1] + dz * t + nz * offset;
+        lamps.push([Math.round(x), Math.round(z)]);
+      }
+      accumulated += segLen;
+    }
+  });
+  return lamps;
+}
 
 // ===== 长椅数据 [x, z, rotation] =====
 const BENCH_DATA = [
@@ -282,12 +302,45 @@ function createTree(x, z, type) {
   return group;
 }
 
-// ===== 批量生成树木 =====
+// ===== 草丛 =====
+function createBush(x, z) {
+  var group = new THREE.Group();
+  var count = 2 + Math.floor(Math.random() * 3);
+  for (var i = 0; i < count; i++) {
+    var r = 0.6 + Math.random() * 0.8;
+    var hue = 0.27 + Math.random() * 0.06;
+    var mat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color().setHSL(hue, 0.5 + Math.random() * 0.2, 0.25 + Math.random() * 0.1),
+      roughness: 0.9
+    });
+    var ball = new THREE.Mesh(new THREE.SphereGeometry(r, 6, 5), mat);
+    ball.position.set((Math.random() - 0.5) * 1.5, r * 0.6, (Math.random() - 0.5) * 1.5);
+    ball.scale.y = 0.6 + Math.random() * 0.3;
+    ball.castShadow = true;
+    group.add(ball);
+  }
+  group.position.set(x, 0, z);
+  group.userData = { name: '草丛', type: '植被', desc: '装饰性灌木丛。' };
+  return group;
+}
+
+// ===== 批量生成树木（从 GRASS_DATA 的 trees 字段读取） =====
+var grassVegMeshes = [];
 function createTrees() {
-  // 暂时关闭树木，方便布置方位
-  // TREE_DATA.forEach(function (e) {
-  //   layerGroups.vegetation.add(createTree(e[0], e[1], e[2]));
-  // });
+  GRASS_DATA.forEach(function(gd) {
+    if (!gd.trees || !gd.trees.length) return;
+    gd.trees.forEach(function(t) {
+      var mesh;
+      if (t.type === 'bush') {
+        mesh = createBush(t.x, t.z);
+      } else {
+        mesh = createTree(t.x, t.z, t.type || 'broad');
+      }
+      layerGroups.vegetation.add(mesh);
+      grassVegMeshes.push(mesh);
+    });
+  });
+  console.log('[Vegetation] 生成树木 ' + grassVegMeshes.length + ' 棵');
 }
 
 // ===== 单盏路灯 =====
@@ -322,6 +375,7 @@ function createStreetLamp(x, z) {
 
 // ===== 批量生成路灯 =====
 function createStreetLamps() {
+  LAMP_DATA = _generateLampData();
   LAMP_DATA.forEach(function (e) {
     layerGroups.facilities.add(createStreetLamp(e[0], e[1]));
   });

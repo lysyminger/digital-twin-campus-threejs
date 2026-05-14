@@ -186,11 +186,19 @@ function _editorRebuildAll() {
     var iIdx = interactables.indexOf(m);
     if (iIdx !== -1) interactables.splice(iIdx, 1);
   }
+  // 植被
+  if (typeof grassVegMeshes !== 'undefined') {
+    while (grassVegMeshes.length > 0) {
+      var m = grassVegMeshes.pop();
+      layerGroups.vegetation.remove(m);
+    }
+  }
 
   // 重新生成
   createGreenAreas();
   createBuildings();
   createCampusRoads();
+  createTrees();
 
   _editorToast('✅ 场景重建完成');
 }

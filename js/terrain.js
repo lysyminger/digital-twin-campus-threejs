@@ -382,7 +382,7 @@ function createFlagpole() {
   group.add(flag);
 
   // 放置在中央广场中心（四块草坪 104-107 的几何中心）
-  group.position.set(0, 0, 72);
+  group.position.set(-2, 0, 92);
   group.userData = {
     name: '国旗杆', type: '设施',
     desc: '中央广场国旗杆，位于图书馆南侧广场中心。'

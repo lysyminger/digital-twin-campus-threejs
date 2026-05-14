@@ -13,6 +13,7 @@ var _geHighlight = null;   // 选中高亮框
 var _gePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);  // y=0 地平面
 var _geIsect = new THREE.Vector3();
 var _geDragOffset = new THREE.Vector2();  // 拖拽偏移
+var _gePlantMode = null;   // null | 'broad' | 'cone' | 'bush' — 种植模式
 
 // ===== 样式注入 =====
 function _geInjectCSS() {
@@ -107,6 +108,14 @@ function _geBuildPanel() {
   <button class="ge-btn" id="ge-add-circle">+ 圆形</button>\
   <button class="ge-btn danger" id="ge-del">删除</button>\
 </div>\
+<div class="ge-hint" style="margin-top:6px">选中草坪后点击种植，再点击草坪放置</div>\
+<div class="ge-toolbar">\
+  <button class="ge-btn" id="ge-plant-broad">🌳 阔叶树</button>\
+  <button class="ge-btn" id="ge-plant-cone">🌲 针叶树</button>\
+  <button class="ge-btn" id="ge-plant-bush">🌿 草丛</button>\
+  <button class="ge-btn danger" id="ge-clear-veg">清除植被</button>\
+</div>\
+<div id="ge-plant-status" class="ge-hint" style="color:#80ffa0;display:none"></div>\
 <div id="ge-list"></div>\
 <div id="ge-props"></div>\
 <div class="ge-toolbar" style="margin-top:10px">\
@@ -126,6 +135,10 @@ function _geBuildPanel() {
   document.getElementById('ge-save').addEventListener('click', _geSave);
   document.getElementById('ge-export').addEventListener('click', _geExport);
   document.getElementById('ge-copy').addEventListener('click', _geCopyCode);
+  document.getElementById('ge-plant-broad').addEventListener('click', function() { _geSetPlantMode('broad'); });
+  document.getElementById('ge-plant-cone').addEventListener('click', function() { _geSetPlantMode('cone'); });
+  document.getElementById('ge-plant-bush').addEventListener('click', function() { _geSetPlantMode('bush'); });
+  document.getElementById('ge-clear-veg').addEventListener('click', _geClearVeg);
 
   // 阻止面板上的 pointer 事件冒泡到 canvas
   p.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
@@ -376,7 +389,98 @@ function _geCopyCode() {
   });
 }
 
-// ===== 场景交互：点击选中 + 拖拽移动 =====
+// ===== 种植模式 =====
+function _geSetPlantMode(type) {
+  if (_geSelIdx < 0) {
+    _editorToast('请先选中一块草坪');
+    return;
+  }
+  if (_gePlantMode === type) {
+    _gePlantMode = null;
+    _geUpdatePlantStatus();
+    return;
+  }
+  _gePlantMode = type;
+  _geUpdatePlantStatus();
+}
+
+function _geUpdatePlantStatus() {
+  var el = document.getElementById('ge-plant-status');
+  if (!el) return;
+  if (_gePlantMode) {
+    var names = { broad: '🌳 阔叶树', cone: '🌲 针叶树', bush: '🌿 草丛' };
+    el.textContent = '种植模式: ' + names[_gePlantMode] + ' · 点击草坪放置 · 再点按钮取消';
+    el.style.display = 'block';
+    renderer.domElement.style.cursor = 'crosshair';
+  } else {
+    el.style.display = 'none';
+    renderer.domElement.style.cursor = '';
+  }
+}
+
+function _gePlantAt(x, z) {
+  if (_geSelIdx < 0 || !_gePlantMode) return;
+  var gd = GRASS_DATA[_geSelIdx];
+  if (!gd.trees) gd.trees = [];
+  var entry = { x: Math.round(x), z: Math.round(z), type: _gePlantMode };
+  gd.trees.push(entry);
+
+  var mesh;
+  if (_gePlantMode === 'bush') {
+    mesh = createBush(x, z);
+  } else {
+    mesh = createTree(x, z, _gePlantMode);
+  }
+  layerGroups.vegetation.add(mesh);
+  grassVegMeshes.push(mesh);
+  _geRefreshVegCount();
+}
+
+function _geClearVeg() {
+  if (_geSelIdx < 0) { _editorToast('请先选中一块草坪'); return; }
+  var gd = GRASS_DATA[_geSelIdx];
+  if (!gd.trees || gd.trees.length === 0) { _editorToast('该草坪没有植被'); return; }
+
+  // 移除该草坪上的所有植被 mesh
+  gd.trees.forEach(function(t) {
+    for (var i = grassVegMeshes.length - 1; i >= 0; i--) {
+      var m = grassVegMeshes[i];
+      if (Math.abs(m.position.x - t.x) < 1 && Math.abs(m.position.z - t.z) < 1) {
+        layerGroups.vegetation.remove(m);
+        grassVegMeshes.splice(i, 1);
+        break;
+      }
+    }
+  });
+  gd.trees = [];
+  _geRefreshVegCount();
+  _editorToast('已清除该草坪上的植被');
+}
+
+function _geRefreshVegCount() {
+  if (_geSelIdx < 0) return;
+  var gd = GRASS_DATA[_geSelIdx];
+  var count = (gd.trees && gd.trees.length) || 0;
+  var el = document.getElementById('ge-plant-status');
+  if (el && _gePlantMode) {
+    var names = { broad: '🌳 阔叶树', cone: '🌲 针叶树', bush: '🌿 草丛' };
+    el.textContent = '种植模式: ' + names[_gePlantMode] + ' · 已种 ' + count + ' 棵 · 点击草坪放置';
+  }
+}
+
+// ===== 判断点是否在草坪范围内 =====
+function _gePointInGrass(gd, x, z) {
+  if (gd.type === 'circle') {
+    var r = gd.r || 20;
+    var dx = x - gd.x, dz = z - gd.z;
+    return (dx * dx + dz * dz) <= r * r;
+  } else {
+    var hw = (gd.w || 20) / 2, hh = (gd.h || 20) / 2;
+    return x >= gd.x - hw && x <= gd.x + hw && z >= gd.z - hh && z <= gd.z + hh;
+  }
+}
+
+// ===== 场景交互：点击选中 + 拖拽移动 + 种植 =====
 function _geOnDown(e) {
   if (!_geActive) return;
   if (e.target !== renderer.domElement) return;
@@ -384,6 +488,18 @@ function _geOnDown(e) {
   var px = (e.clientX / window.innerWidth) * 2 - 1;
   var py = -(e.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(new THREE.Vector2(px, py), camera);
+
+  // 种植模式：点击地面种树
+  if (_gePlantMode && _geSelIdx >= 0) {
+    if (raycaster.ray.intersectPlane(_gePlane, _geIsect)) {
+      var gd = GRASS_DATA[_geSelIdx];
+      if (_gePointInGrass(gd, _geIsect.x, _geIsect.z)) {
+        _gePlantAt(_geIsect.x, _geIsect.z);
+        e.stopPropagation();
+        return;
+      }
+    }
+  }
 
   // 检测是否点在草坪上
   var hits = raycaster.intersectObjects(greenMeshes, false);
@@ -404,6 +520,8 @@ function _geOnDown(e) {
   }
 
   // 点击空地 → 取消选中
+  _gePlantMode = null;
+  _geUpdatePlantStatus();
   _geSelect(-1);
 }
 
@@ -460,6 +578,8 @@ function toggleGreenEditor() {
     if (infoCard) infoCard.classList.remove('show');
   } else {
     _geSelIdx = -1;
+    _gePlantMode = null;
+    _geUpdatePlantStatus();
     _geUpdateHighlight();
     var box = document.getElementById('ge-export-box');
     if (box) box.style.display = 'none';
@@ -471,6 +591,8 @@ function closeGreenEditor() {
   if (!_geActive) return;
   _geActive = false;
   activeEditor = null;
+  _gePlantMode = null;
+  _geUpdatePlantStatus();
   if (_gePanel) _gePanel.classList.remove('show');
   _geSelIdx = -1;
   _geUpdateHighlight();
