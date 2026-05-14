@@ -83,7 +83,7 @@
 
   <!-- ===== 小地图 ===== -->
   <div class="minimap glass">
-    <span class="label">MINIMAP</span>
+    <span class="label">拱宸桥校区</span>
     <canvas id="minimap-canvas"></canvas>
   </div>
 
@@ -101,6 +101,11 @@
   <!-- ===== Three.js（本地，全局变量版） ===== -->
   <script src="./vendor/three.min.js"></script>
   <script src="./vendor/OrbitControls.js"></script>
+
+  <!-- ===== 存档数据（location.js 存在则覆盖默认数据，不存在则忽略） ===== -->
+  <script src="./location.js" onerror="window.LOCATION_DATA=null"></script>
+  <!-- ===== GLB 模型缓存（build_glb_cache.bat 生成，file:// 也能加载） ===== -->
+  <script src="./glb_cache.js" onerror="window.GLB_CACHE={}"></script>
 
   <!-- ===== 业务脚本（按依赖顺序加载） ===== -->
   <script src="./js/core.js"></script>

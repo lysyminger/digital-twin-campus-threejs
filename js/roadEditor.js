@@ -510,6 +510,7 @@ function toggleRoadEditor() {
     _reClearHandles();
     document.getElementById('re-export-box').style.display = 'none';
   }
+  _editorUpdateIOBtns();
 }
 
 // 外部调用：关闭道路编辑器
@@ -522,6 +523,7 @@ function closeRoadEditor() {
   _reSelPt = -1;
   _reClearHandles();
   document.getElementById('re-export-box').style.display = 'none';
+  _editorUpdateIOBtns();
 }
 
 // ===== 初始化 =====

@@ -39,7 +39,7 @@ function animate(now) {
 function boot() {
   initScene();
 
-  // 从 localStorage 恢复编辑器存档（如果有的话）
+  // 从 location.js 恢复编辑器存档（如果有的话）
   editorLoadAll();
 
   // 地形
@@ -68,8 +68,12 @@ function boot() {
   initGreenEditor();     // 草坪编辑器（按 G 键打开）
   initBuildingEditor();  // 建筑编辑器（按 B 键打开）
   initRoadEditor();      // 道路编辑器（按 R 键打开）
+  _editorInitButtons();  // 左下角存档/导入按钮
   updateTimeDisplay(12);
   updateTimeOfDay(12);   // 初始化为正午
+
+  // 自动加载 location.js 中指定的 GLB 模型
+  _autoLoadGLBFromData();
 
   requestAnimationFrame(animate);
   setTimeout(() => document.getElementById('loader').classList.add('hide'), 300);

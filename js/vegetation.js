@@ -284,9 +284,10 @@ function createTree(x, z, type) {
 
 // ===== 批量生成树木 =====
 function createTrees() {
-  TREE_DATA.forEach(function (e) {
-    layerGroups.vegetation.add(createTree(e[0], e[1], e[2]));
-  });
+  // 暂时关闭树木，方便布置方位
+  // TREE_DATA.forEach(function (e) {
+  //   layerGroups.vegetation.add(createTree(e[0], e[1], e[2]));
+  // });
 }
 
 // ===== 单盏路灯 =====

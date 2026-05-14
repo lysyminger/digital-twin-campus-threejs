@@ -456,18 +456,17 @@ function toggleGreenEditor() {
   if (_geActive) {
     _geRefreshList();
     _geRefreshProps();
-    // 隐藏信息卡避免干扰
     var infoCard = document.getElementById('info-card');
     if (infoCard) infoCard.classList.remove('show');
   } else {
     _geSelIdx = -1;
     _geUpdateHighlight();
-    // 隐藏导出框
     var box = document.getElementById('ge-export-box');
     if (box) box.style.display = 'none';
   }
+  _editorUpdateIOBtns();
 }
-// 外部调用：关闭草坪编辑器（被其他编辑器互斥时用）
+// 外部调用：关闭草坪编辑器
 function closeGreenEditor() {
   if (!_geActive) return;
   _geActive = false;
@@ -477,6 +476,7 @@ function closeGreenEditor() {
   _geUpdateHighlight();
   var box = document.getElementById('ge-export-box');
   if (box) box.style.display = 'none';
+  _editorUpdateIOBtns();
 }
 
 // ===== 初始化 =====

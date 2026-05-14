@@ -259,8 +259,12 @@ function _beSyncMesh(idx) {
   if (info.glb && _beGLBCache[info.glb]) {
     // 使用 GLB 模型
     newGroup = _beGLBCache[info.glb].clone();
-    var scale = info.glbScale || 1;
-    newGroup.scale.set(scale, scale, scale);
+    // 自动缩放：目标高度 / 原始高度 × 用户缩放
+    var origH = _beGLBCache[info.glb].userData._origH || 1;
+    var autoScale = info.h / origH;
+    var userScale = info.glbScale || 1;
+    var finalScale = autoScale * userScale;
+    newGroup.scale.set(finalScale, finalScale, finalScale);
     newGroup.rotation.y = (info.glbRotY || 0) * Math.PI / 180;
     newGroup.position.set(info.x, 0, info.z);
   } else {
@@ -275,7 +279,47 @@ function _beSyncMesh(idx) {
   _beUpdateHighlight();
 }
 
-// ===== GLB 加载 =====
+// ===== base64 → ArrayBuffer =====
+function _beBase64ToArrayBuffer(b64) {
+  var bin = atob(b64);
+  var buf = new ArrayBuffer(bin.length);
+  var view = new Uint8Array(buf);
+  for (var i = 0; i < bin.length; i++) view[i] = bin.charCodeAt(i);
+  return buf;
+}
+
+// ===== 处理加载后的 GLTF 结果 =====
+function _beProcessGLTF(gltf, filename, idx) {
+  var info = BUILDING_DATA[idx];
+  var status = document.getElementById('be-glb-status');
+  var model = gltf.scene;
+
+  // 计算原始高度（不预缩放，保持原始尺寸缓存）
+  var box = new THREE.Box3().setFromObject(model);
+  var actualH = box.max.y - box.min.y;
+
+  // 把模型底部对齐 y=0（用原始尺寸的偏移）
+  model.position.y = -box.min.y;
+
+  model.traverse(function(c) {
+    if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
+  });
+
+  var wrapper = new THREE.Group();
+  wrapper.add(model);
+  // 记录原始高度，供 _beSyncMesh 计算 autoScale
+  wrapper.userData._origH = actualH > 0 ? actualH : 1;
+  _beGLBCache[filename] = wrapper;
+
+  info.glb = filename;
+  info.glbScale = parseFloat(document.getElementById('be-glb-scale').value) || 1;
+  info.glbRotY = parseFloat(document.getElementById('be-glb-roty').value) || 0;
+  _beSyncMesh(idx);
+  if (status) status.innerHTML = '<span class="be-glb-ok">✔ 已加载: ' + filename + '</span>';
+  _beRefreshProps();
+}
+
+// ===== GLB 加载（优先 glb_cache.js 内存，回退 HTTP 文件） =====
 function _beLoadGLB(idx) {
   var filename = document.getElementById('be-glb').value.trim();
   if (!filename) return;
@@ -283,7 +327,7 @@ function _beLoadGLB(idx) {
   var status = document.getElementById('be-glb-status');
   status.innerHTML = '<span style="color:#88bbff">加载中…</span>';
 
-  // 缓存命中
+  // 1. 已解析缓存
   if (_beGLBCache[filename]) {
     info.glb = filename;
     info.glbScale = parseFloat(document.getElementById('be-glb-scale').value) || 1;
@@ -294,36 +338,25 @@ function _beLoadGLB(idx) {
   }
 
   var loader = new THREE.GLTFLoader();
-  loader.load('./assets/' + filename, function(gltf) {
-    var model = gltf.scene;
-    // 计算包围盒，自动缩放 = 目标高度 / 实际高度
-    var box = new THREE.Box3().setFromObject(model);
-    var actualH = box.max.y - box.min.y;
-    if (actualH > 0) {
-      var autoScale = info.h / actualH;
-      model.scale.set(autoScale, autoScale, autoScale);
-    }
-    // 居中底部
-    box.setFromObject(model);
-    model.position.y = -box.min.y;
-    // 阴影
-    model.traverse(function(c) {
-      if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
-    });
-    // 包装到 Group 中作为克隆源
-    var wrapper = new THREE.Group();
-    wrapper.add(model);
-    _beGLBCache[filename] = wrapper;
 
-    info.glb = filename;
-    info.glbScale = parseFloat(document.getElementById('be-glb-scale').value) || 1;
-    info.glbRotY = parseFloat(document.getElementById('be-glb-roty').value) || 0;
-    _beSyncMesh(idx);
-    status.innerHTML = '<span class="be-glb-ok">✔ 已加载: ' + filename + '</span>';
-    _beRefreshProps();
+  // 2. glb_cache.js base64 缓存（file:// 也能用）
+  if (typeof GLB_CACHE !== 'undefined' && GLB_CACHE[filename]) {
+    var buf = _beBase64ToArrayBuffer(GLB_CACHE[filename]);
+    loader.parse(buf, '', function(gltf) {
+      _beProcessGLTF(gltf, filename, idx);
+    }, function(err) {
+      console.warn('[BuildingEditor] GLB parse 失败:', filename, err);
+      status.innerHTML = '<span class="be-glb-err">✘ 解析失败: ' + filename + '</span>';
+    });
+    return;
+  }
+
+  // 3. HTTP 加载（localhost 下可用）
+  loader.load('./assets/' + filename, function(gltf) {
+    _beProcessGLTF(gltf, filename, idx);
   }, undefined, function(err) {
     console.warn('[BuildingEditor] GLB 加载失败:', filename, err);
-    status.innerHTML = '<span class="be-glb-err">✘ 加载失败: ' + filename + '</span>';
+    status.innerHTML = '<span class="be-glb-err">✘ 加载失败: ' + filename + '<br>file:// 需先运行 build_glb_cache.bat</span>';
   });
 }
 
@@ -533,6 +566,7 @@ function toggleBuildingEditor() {
     _beUpdateHighlight();
     document.getElementById('be-export-box').style.display = 'none';
   }
+  _editorUpdateIOBtns();
 }
 
 // 外部调用：关闭建筑编辑器
@@ -544,6 +578,7 @@ function closeBuildingEditor() {
   _beSelIdx = -1;
   _beUpdateHighlight();
   document.getElementById('be-export-box').style.display = 'none';
+  _editorUpdateIOBtns();
 }
 
 // ===== 初始化 =====
@@ -565,3 +600,60 @@ function initBuildingEditor() {
   window.addEventListener('pointermove', _beOnMove);
   window.addEventListener('pointerup', _beOnUp);
 }
+
+// ===== 启动时自动加载 BUILDING_DATA 中已有 glb 字段的模型 =====
+function _autoLoadGLBFromData() {
+  // 收集需要加载的不重复文件名
+  var needed = {};
+  BUILDING_DATA.forEach(function(info, idx) {
+    if (info.glb && !_beGLBCache[info.glb]) {
+      if (!needed[info.glb]) needed[info.glb] = [];
+      needed[info.glb].push(idx);
+    }
+  });
+  var filenames = Object.keys(needed);
+  if (filenames.length === 0) return;
+
+  var loader = new THREE.GLTFLoader();
+  filenames.forEach(function(filename) {
+    var idxList = needed[filename];
+
+    // 优先从 glb_cache.js 的 base64 加载
+    if (typeof GLB_CACHE !== 'undefined' && GLB_CACHE[filename]) {
+      var buf = _beBase64ToArrayBuffer(GLB_CACHE[filename]);
+      loader.parse(buf, '', function(gltf) {
+        _beCacheGLTF(gltf, filename);
+        idxList.forEach(function(idx) { _beSyncMesh(idx); });
+      }, function(err) {
+        console.warn('[AutoGLB] parse 失败:', filename, err);
+      });
+      return;
+    }
+
+    // 回退 HTTP
+    loader.load('./assets/' + filename, function(gltf) {
+      _beCacheGLTF(gltf, filename);
+      idxList.forEach(function(idx) { _beSyncMesh(idx); });
+    }, undefined, function(err) {
+      console.warn('[AutoGLB] 加载失败:', filename, err);
+    });
+  });
+}
+
+// 将 gltf 结果缓存（不带位置信息，克隆时再设）
+function _beCacheGLTF(gltf, filename) {
+  var model = gltf.scene;
+  var box = new THREE.Box3().setFromObject(model);
+  var actualH = box.max.y - box.min.y;
+  // 不做自动缩放，保留原始大小，_beSyncMesh 里按 glbScale 处理
+  model.position.y = -box.min.y;
+  model.traverse(function(c) {
+    if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
+  });
+  var wrapper = new THREE.Group();
+  wrapper.add(model);
+  // 存原始高度供 sync 时计算
+  wrapper.userData._origH = actualH > 0 ? actualH : 1;
+  _beGLBCache[filename] = wrapper;
+}
+
