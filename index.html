@@ -41,6 +41,8 @@
       <input class="switch" type="checkbox" id="layer-facilities" data-layer="facilities" checked></div>
     <div class="row"><label for="layer-aiModels">AI 模型</label>
       <input class="switch" type="checkbox" id="layer-aiModels" data-layer="aiModels" checked></div>
+    <div class="row"><label for="toggle-labels">建筑标签</label>
+      <input class="switch" type="checkbox" id="toggle-labels"></div>
 
     <h2>视角</h2>
     <div class="btn-group">
@@ -101,6 +103,7 @@
   <!-- ===== Three.js（本地，全局变量版） ===== -->
   <script src="./vendor/three.min.js"></script>
   <script src="./vendor/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS2DRenderer.js"></script>
 
   <!-- ===== 存档数据（location.js 存在则覆盖默认数据，不存在则忽略） ===== -->
   <script src="./data/location.js" onerror="window.LOCATION_DATA=null"></script>
@@ -115,6 +118,7 @@
   <script src="./js/sports.js"></script>
   <script src="./js/buildings.js"></script>
   <script src="./js/vegetation.js"></script>
+  <script src="./js/labels.js"></script>
   <script src="./js/ui.js"></script>
   <script src="./js/tour.js"></script>
   <script src="./js/freeRoam.js"></script>

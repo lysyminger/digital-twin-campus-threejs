@@ -206,6 +206,9 @@ function _editorRebuildAll() {
     if (slider) updateTimeOfDay(parseFloat(slider.value));
   }
 
+  // 重建建筑名称标签（BUILDING_DATA 可能已变）
+  if (typeof initBuildingLabels === 'function') initBuildingLabels();
+
   _editorToast('✅ 场景重建完成');
 }
 

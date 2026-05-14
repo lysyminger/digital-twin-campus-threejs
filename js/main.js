@@ -33,7 +33,13 @@ function animate(now) {
   // 天空云朵每帧飘动
   if (typeof updateClouds === 'function') updateClouds(dt);
 
+  // 建筑标签距离过滤
+  if (typeof updateLabels === 'function') updateLabels();
+
   renderer.render(scene, camera);
+
+  // CSS2D 标签层叠加（必须在 webgl 渲染后）
+  if (labelRenderer) labelRenderer.render(scene, camera);
 
   // 小地图每帧刷新
   drawMinimap();
@@ -68,9 +74,18 @@ function boot() {
   createStreetLamps();
   createBenches();
 
+  // 建筑名称标签（在 createBuildings 之后初始化，让 BUILDING_DATA 准备好）
+  initBuildingLabels();
+
   // UI
   bindUI();
   bindFreeRoam();   // 注册 PointerLock / mousemove / keydown 全局事件
+
+  // 标签开关
+  const labelSwitch = document.getElementById('toggle-labels');
+  if (labelSwitch) {
+    labelSwitch.addEventListener('change', e => toggleLabels(e.target.checked));
+  }
   initMinimap();    // 初始化小地图
   initGreenEditor();     // 草坪编辑器（按 G 键打开）
   initBuildingEditor();  // 建筑编辑器（按 B 键打开）

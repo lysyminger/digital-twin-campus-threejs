@@ -175,6 +175,24 @@ input[type="range"]::-webkit-slider-thumb {
   font-family: monospace;
 }
 
+/* ===== 建筑名称标签（CSS2DRenderer） ===== */
+.building-label {
+  background: rgba(12, 22, 36, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(120, 200, 255, 0.25);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: #cfe8ff;
+  white-space: nowrap;
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  letter-spacing: 0.5px;
+  user-select: none;
+  pointer-events: none;
+  text-shadow: 0 0 6px rgba(0, 10, 25, 0.8);
+}
+
 /* ===== 自由漫游 UI ===== */
 #roam-crosshair {
   display: none;
