@@ -643,7 +643,16 @@ function _autoLoadGLBFromData() {
       return;
     }
 
-    // 回退 HTTP
+    // 回退 HTTP（file:// 协议下大概率失败）
+    var cacheHasIt = (typeof GLB_CACHE !== 'undefined') && Object.keys(GLB_CACHE || {}).length > 0;
+    if (location.protocol === 'file:' && cacheHasIt) {
+      // 缓存存在但不含该文件：明显是缓存过期
+      console.error(
+        '[AutoGLB] "' + filename + '" 不在 data/glb_cache.js 缓存中。\n' +
+        '请双击 tools/build_glb_cache.bat 重新生成缓存（assets/ 下新增 GLB 后必须重跑）。'
+      );
+      return;
+    }
     loader.load('./assets/' + filename, function(gltf) {
       _beCacheGLTF(gltf, filename);
       idxList.forEach(function(idx) { _beSyncMesh(idx); });
