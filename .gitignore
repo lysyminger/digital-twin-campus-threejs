@@ -19,5 +19,15 @@ desktop.ini
 node_modules/
 dist/
 
+# 运行时数据（用户存档 + GLB 缓存，体积大，本地生成）
+data/glb_cache.js
+data/location.js
+
+# GLB 模型源文件（体积大，不进仓库）
+assets/*.glb
+
+# 未使用的 Three.js 源码
+vendor/three.js-r179/
+
 # 作业本体附件（保留在本地，不公开）
 期中考核-系统说明手册.docx

@@ -81,17 +81,31 @@
     <span class="key">Esc</span> 退出
   </div>
 
+  <!-- ===== 小地图 ===== -->
+  <div class="minimap glass">
+    <span class="label">拱宸桥校区</span>
+    <canvas id="minimap-canvas"></canvas>
+  </div>
+
   <!-- ===== 底部操作提示 ===== -->
   <div class="hints glass">
     <span class="key">左键</span> 旋转 ·
     <span class="key">右键</span> 平移 ·
     <span class="key">滚轮</span> 缩放 ·
-    <span class="key">点击</span> 查看信息
+    <span class="key">点击</span> 查看信息 ·
+    <span class="key">G</span> 草坪 ·
+    <span class="key">B</span> 建筑 ·
+    <span class="key">R</span> 道路
   </div>
 
   <!-- ===== Three.js（本地，全局变量版） ===== -->
   <script src="./vendor/three.min.js"></script>
   <script src="./vendor/OrbitControls.js"></script>
+
+  <!-- ===== 存档数据（location.js 存在则覆盖默认数据，不存在则忽略） ===== -->
+  <script src="./data/location.js" onerror="window.LOCATION_DATA=null"></script>
+  <!-- ===== GLB 模型缓存（tools/build_glb_cache.bat 生成，file:// 也能加载） ===== -->
+  <script src="./data/glb_cache.js" onerror="window.GLB_CACHE={}"></script>
 
   <!-- ===== 业务脚本（按依赖顺序加载） ===== -->
   <script src="./js/core.js"></script>
@@ -103,6 +117,10 @@
   <script src="./js/ui.js"></script>
   <script src="./js/tour.js"></script>
   <script src="./js/freeRoam.js"></script>
+  <script src="./js/greenEditor.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="./js/buildingEditor.js"></script>
+  <script src="./js/roadEditor.js"></script>
   <script src="./js/minimap.js"></script>
   <script src="./js/main.js"></script>
 </body>
