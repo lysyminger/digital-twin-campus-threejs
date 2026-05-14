@@ -58,10 +58,23 @@ function updateTimeOfDay(hour) {
   sun.castShadow = sun.position.y > 5;
 
   // ---- 4. 夜晚路灯（hour < 6 || hour > 19）----
+  // 只开最近相机的 8 盏 PointLight，其余仅用 emissive 假发光
   const isNight = (hour < 6 || hour > 19);
-  streetLamps.forEach(({ light, bulbMat }) => {
-    light.intensity = isNight ? 0.5 : 0;
-    bulbMat.emissive.setHex(isNight ? 0xffcc66 : 0x000000);
-    bulbMat.emissiveIntensity = isNight ? 1.0 : 0;
-  });
+  if (isNight) {
+    streetLamps.forEach(s => {
+      s._dist = camera.position.distanceToSquared(s.light.parent.position);
+    });
+    streetLamps.sort((a, b) => a._dist - b._dist);
+    streetLamps.forEach((s, i) => {
+      s.light.intensity = (i < 8) ? 0.5 : 0;
+      s.bulbMat.emissive.setHex(0xffcc66);
+      s.bulbMat.emissiveIntensity = 1.0;
+    });
+  } else {
+    streetLamps.forEach(s => {
+      s.light.intensity = 0;
+      s.bulbMat.emissive.setHex(0x000000);
+      s.bulbMat.emissiveIntensity = 0;
+    });
+  }
 }
