@@ -59,66 +59,66 @@ function animate(now) {
 }
 
 // ===== 启动 =====
+// 单步包裹：任何一步抛错都记录到控制台并继续，避免整条加载链断在某一步
+function _safe(label, fn) {
+  try { fn(); }
+  catch (e) { console.error('[boot] ' + label + ' 失败:', e); }
+}
+
 function boot() {
-  initScene();
-
-  // 天空穹顶（要在 updateTimeOfDay 之前，让 timeOfDay 检测到 skyDome 存在）
-  initSkyDome();
-
-  // Bloom 后处理（要在 updateTimeOfDay 之前，让 timeOfDay 能调 bloomPass.strength）
-  initBloom();
-
-  // 从 location.js 恢复编辑器存档（如果有的话）
-  editorLoadAll();
+  _safe('initScene',          () => initScene());
+  _safe('initSkyDome',        () => initSkyDome());
+  _safe('initBloom',          () => initBloom());
+  _safe('editorLoadAll',      () => editorLoadAll());
 
   // 地形
-  createGround();
-  createCampusRoads();
-  createGreenAreas();
+  _safe('createGround',       () => createGround());
+  _safe('createCampusRoads',  () => createCampusRoads());
+  _safe('createGreenAreas',   () => createGreenAreas());
 
   // 运动设施 + 国旗杆
-  createTrack();
-  createGrandstand();
-  createBasketballCourts();
-  createFlagpole();
+  _safe('createTrack',        () => createTrack());
+  _safe('createGrandstand',   () => createGrandstand());
+  _safe('createBasketballCourts', () => createBasketballCourts());
+  _safe('createFlagpole',     () => createFlagpole());
 
   // 建筑
-  createBuildings();
+  _safe('createBuildings',    () => createBuildings());
 
   // 植被与设施
-  createTrees();
-  createStreetLamps();
-  createBenches();
+  _safe('createTrees',        () => createTrees());
+  _safe('createStreetLamps',  () => createStreetLamps());
+  _safe('createBenches',      () => createBenches());
 
-  // 建筑名称标签（在 createBuildings 之后初始化，让 BUILDING_DATA 准备好）
-  initBuildingLabels();
-
-  // 粒子效果（白天落叶 + 夜间萤火虫）
-  initLeaves();
-  initFireflies();
+  // 标签 / 粒子
+  _safe('initBuildingLabels', () => initBuildingLabels());
+  _safe('initLeaves',         () => initLeaves());
+  _safe('initFireflies',      () => initFireflies());
 
   // UI
-  bindUI();
-  bindFreeRoam();   // 注册 PointerLock / mousemove / keydown 全局事件
-
-  // 标签开关
-  const labelSwitch = document.getElementById('toggle-labels');
-  if (labelSwitch) {
-    labelSwitch.addEventListener('change', e => toggleLabels(e.target.checked));
-  }
-  initMinimap();    // 初始化小地图
-  initGreenEditor();     // 草坪编辑器（按 G 键打开）
-  initBuildingEditor();  // 建筑编辑器（按 B 键打开）
-  initRoadEditor();      // 道路编辑器（按 R 键打开）
-  _editorInitButtons();  // 左下角存档/导入按钮
-  updateTimeDisplay(12);
-  updateTimeOfDay(12);   // 初始化为正午
-
-  // 自动加载 location.js 中指定的 GLB 模型
-  _autoLoadGLBFromData();
+  _safe('bindUI',             () => bindUI());
+  _safe('bindFreeRoam',       () => bindFreeRoam());
+  _safe('label switch bind',  () => {
+    const labelSwitch = document.getElementById('toggle-labels');
+    if (labelSwitch) {
+      labelSwitch.addEventListener('change', e => toggleLabels(e.target.checked));
+    }
+  });
+  _safe('initMinimap',        () => initMinimap());
+  _safe('initGreenEditor',    () => initGreenEditor());
+  _safe('initBuildingEditor', () => initBuildingEditor());
+  _safe('initRoadEditor',     () => initRoadEditor());
+  _safe('_editorInitButtons', () => _editorInitButtons());
+  _safe('updateTimeDisplay',  () => updateTimeDisplay(12));
+  _safe('updateTimeOfDay',    () => updateTimeOfDay(12));
+  _safe('_autoLoadGLBFromData', () => _autoLoadGLBFromData());
 
   requestAnimationFrame(animate);
-  setTimeout(() => document.getElementById('loader').classList.add('hide'), 300);
+  // 无论上面哪步失败，loader 都要藏起来
+  setTimeout(() => {
+    const el = document.getElementById('loader');
+    if (el) el.classList.add('hide');
+  }, 300);
 }
 
 boot();
