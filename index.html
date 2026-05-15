@@ -104,6 +104,13 @@
   <script src="./vendor/three.min.js"></script>
   <script src="./vendor/OrbitControls.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS2DRenderer.js"></script>
+  <!-- ===== Bloom 后处理（按顺序加载） ===== -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 
   <!-- ===== 存档数据（location.js 存在则覆盖默认数据，不存在则忽略） ===== -->
   <script src="./data/location.js" onerror="window.LOCATION_DATA=null"></script>
@@ -119,6 +126,7 @@
   <script src="./js/buildings.js"></script>
   <script src="./js/vegetation.js"></script>
   <script src="./js/labels.js"></script>
+  <script src="./js/bloom.js"></script>
   <script src="./js/ui.js"></script>
   <script src="./js/tour.js"></script>
   <script src="./js/freeRoam.js"></script>

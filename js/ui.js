@@ -136,4 +136,5 @@ function onResize() {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
   if (typeof resizeLabels === 'function') resizeLabels();
+  if (typeof resizeBloom === 'function') resizeBloom();
 }

@@ -97,4 +97,14 @@ function updateTimeOfDay(hour) {
       windowMeshes.forEach(win => { win.material = windowMat; });
     }
   }
+
+  // ---- 6. Bloom 强度（白天 0，夜晚 0.6，晨昏渐变） ----
+  if (typeof bloomPass !== 'undefined' && bloomPass) {
+    let s;
+    if (hour < 5 || hour > 20)            s = 0.6;                      // 深夜
+    else if (hour >= 5 && hour < 7)       s = 0.6 * (1 - (hour - 5) / 2);   // 日出渐弱
+    else if (hour > 18 && hour <= 20)     s = 0.6 * ((hour - 18) / 2);     // 日落渐强
+    else                                  s = 0;                          // 白天
+    bloomPass.strength = s;
+  }
 }

@@ -36,7 +36,12 @@ function animate(now) {
   // 建筑标签距离过滤
   if (typeof updateLabels === 'function') updateLabels();
 
-  renderer.render(scene, camera);
+  // Bloom：strength > 0 时走 EffectComposer，否则走原生渲染（零开销）
+  if (composer && bloomPass && bloomPass.strength > 0) {
+    composer.render();
+  } else {
+    renderer.render(scene, camera);
+  }
 
   // CSS2D 标签层叠加（必须在 webgl 渲染后）
   if (labelRenderer) labelRenderer.render(scene, camera);
@@ -51,6 +56,9 @@ function boot() {
 
   // 天空穹顶（要在 updateTimeOfDay 之前，让 timeOfDay 检测到 skyDome 存在）
   initSkyDome();
+
+  // Bloom 后处理（要在 updateTimeOfDay 之前，让 timeOfDay 能调 bloomPass.strength）
+  initBloom();
 
   // 从 location.js 恢复编辑器存档（如果有的话）
   editorLoadAll();
