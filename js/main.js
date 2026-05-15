@@ -33,6 +33,14 @@ function animate(now) {
   // 天空云朵每帧飘动
   if (typeof updateClouds === 'function') updateClouds(dt);
 
+  // 粒子效果：读取当前时间槽位
+  if (typeof updateLeaves === 'function' || typeof updateFireflies === 'function') {
+    const slider = document.getElementById('time-slider');
+    const curHour = slider ? parseFloat(slider.value) : 12;
+    if (typeof updateLeaves === 'function')    updateLeaves(dt, curHour);
+    if (typeof updateFireflies === 'function') updateFireflies(dt, curHour);
+  }
+
   // 建筑标签距离过滤
   if (typeof updateLabels === 'function') updateLabels();
 
@@ -84,6 +92,10 @@ function boot() {
 
   // 建筑名称标签（在 createBuildings 之后初始化，让 BUILDING_DATA 准备好）
   initBuildingLabels();
+
+  // 粒子效果（白天落叶 + 夜间萤火虫）
+  initLeaves();
+  initFireflies();
 
   // UI
   bindUI();
