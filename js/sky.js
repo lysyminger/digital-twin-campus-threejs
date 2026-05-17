@@ -11,7 +11,7 @@
 let skyDome = null;
 let skyUniforms = null;
 const clouds = [];                  // 每项 { sprite, windSpeed }
-const CLOUD_COUNT = 6;
+const CLOUD_COUNT = 18;
 const CLOUD_BOUND = 450;            // X 循环边界
 let cloudOpacityTarget = 0.8;       // 由 updateSkyDome 改写
 
@@ -129,50 +129,78 @@ function updateSkyDome(hour) {
   else                                cloudOpacityTarget = 0.05;
 }
 
-// ===== 云朵：canvas 径向渐变贴图 =====
-function _makeCloudTexture() {
-  const size = 128;
+// ===== 云朵：canvas 多团叠加贴图（更自然的团状） =====
+function _makeCloudTexture(seed) {
+  const size = 256;
   const cv = document.createElement('canvas');
-  cv.width = cv.height = size;
+  cv.width = size; cv.height = size * 0.6;
   const ctx = cv.getContext('2d');
-  const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
-  grad.addColorStop(0.0, 'rgba(255,255,255,0.95)');
-  grad.addColorStop(0.3, 'rgba(255,255,255,0.65)');
-  grad.addColorStop(0.7, 'rgba(255,255,255,0.18)');
-  grad.addColorStop(1.0, 'rgba(255,255,255,0.0)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, size, size);
+
+  // 用多个随机圆叠加模拟云团不规则外形
+  const blobCount = 7 + Math.floor((seed || 0) * 5);
+  for (let i = 0; i < blobCount; i++) {
+    const bx = size * (0.2 + Math.random() * 0.6);
+    const by = cv.height * (0.25 + Math.random() * 0.5);
+    const br = 25 + Math.random() * 45;
+    const grad = ctx.createRadialGradient(bx, by, 0, bx, by, br);
+    const alpha = 0.35 + Math.random() * 0.4;
+    grad.addColorStop(0.0, 'rgba(255,255,255,' + (alpha + 0.2).toFixed(2) + ')');
+    grad.addColorStop(0.4, 'rgba(255,255,255,' + (alpha * 0.7).toFixed(2) + ')');
+    grad.addColorStop(0.7, 'rgba(255,255,255,' + (alpha * 0.25).toFixed(2) + ')');
+    grad.addColorStop(1.0, 'rgba(255,255,255,0.0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, cv.height);
+  }
+  // 整体加一层大范围柔光让边缘更柔和
+  const outerGrad = ctx.createRadialGradient(size/2, cv.height/2, 0, size/2, cv.height/2, size * 0.48);
+  outerGrad.addColorStop(0.0, 'rgba(255,255,255,0.3)');
+  outerGrad.addColorStop(0.6, 'rgba(255,255,255,0.08)');
+  outerGrad.addColorStop(1.0, 'rgba(255,255,255,0.0)');
+  ctx.fillStyle = outerGrad;
+  ctx.fillRect(0, 0, size, cv.height);
+
   const tex = new THREE.CanvasTexture(cv);
   tex.minFilter = THREE.LinearFilter;
   return tex;
 }
 
 function _initClouds() {
-  const tex = _makeCloudTexture();
-  for (let i = 0; i < CLOUD_COUNT; i++) {
+  // 生成 4 种不同形态的云贴图
+  const textures = [];
+  for (let t = 0; t < 4; t++) {
+    textures.push(_makeCloudTexture(t * 0.25 + 0.1));
+  }
+
+  // 12 朵主云 + 6 朵远景薄云 = 18 朵
+  const totalClouds = 18;
+  for (let i = 0; i < totalClouds; i++) {
+    const isDistant = (i >= 12);
+    const tex = textures[i % textures.length];
     const mat = new THREE.SpriteMaterial({
       map: tex,
       transparent: true,
-      opacity: 0.8,
+      opacity: isDistant ? 0.45 : 0.8,
       depthWrite: false,
       fog: false
     });
     const sp = new THREE.Sprite(mat);
-    // 大小：80~140m 随机
-    const w = 80 + Math.random() * 60;
-    const h = w * (0.45 + Math.random() * 0.25);
+    // 主云 100~180m，远景薄云 150~280m
+    const w = isDistant ? (150 + Math.random() * 130) : (100 + Math.random() * 80);
+    const h = w * (0.35 + Math.random() * 0.2);
     sp.scale.set(w, h, 1);
-    // 位置：XZ 散布，Y 150~250
+    // 位置：主云 Y 140~220，远景云 Y 200~320（更高更远）
+    const y = isDistant ? (200 + Math.random() * 120) : (140 + Math.random() * 80);
     sp.position.set(
-      (Math.random() - 0.5) * CLOUD_BOUND * 1.8,
-      150 + Math.random() * 100,
-      (Math.random() - 0.5) * CLOUD_BOUND * 1.8
+      (Math.random() - 0.5) * CLOUD_BOUND * 2,
+      y,
+      (Math.random() - 0.5) * CLOUD_BOUND * 2
     );
-    sp.renderOrder = 1;   // 在天穹之上、地面之下
+    sp.renderOrder = 1;
     scene.add(sp);
     clouds.push({
       sprite: sp,
-      windSpeed: 3 + Math.random() * 4   // 3~7 m/s
+      windSpeed: isDistant ? (1.5 + Math.random() * 2) : (3 + Math.random() * 5),
+      baseOpacity: isDistant ? 0.45 : 0.8
     });
   }
 }
@@ -185,10 +213,12 @@ function updateClouds(dt) {
     c.sprite.position.x += c.windSpeed * dt;
     if (c.sprite.position.x > CLOUD_BOUND) {
       c.sprite.position.x = -CLOUD_BOUND;
-      c.sprite.position.z = (Math.random() - 0.5) * CLOUD_BOUND * 1.8;
+      c.sprite.position.z = (Math.random() - 0.5) * CLOUD_BOUND * 2;
     }
-    // 透明度向目标平滑（避免拖滑块时跳变）
+    // 透明度：按每朵云的基础透明度比例缩放目标值
+    const ratio = (c.baseOpacity || 0.8) / 0.8;
+    const target = cloudOpacityTarget * ratio;
     const op = c.sprite.material.opacity;
-    c.sprite.material.opacity = op + (cloudOpacityTarget - op) * Math.min(1, dt * 2);
+    c.sprite.material.opacity = op + (target - op) * Math.min(1, dt * 2);
   }
 }
