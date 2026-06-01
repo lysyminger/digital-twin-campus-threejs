@@ -344,14 +344,14 @@ function createFlagpole() {
   var poleMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.3, metalness: 0.7 });
   var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, poleH, 8), poleMat);
   pole.position.y = poleH / 2;
-  pole.castShadow = true;
+  pole.castShadow = false;
   group.add(pole);
 
   // 旗杆底座（灰色圆台）
   var baseMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.6 });
   var base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.0, 0.6, 12), baseMat);
   base.position.y = 0.3;
-  base.castShadow = true;
+  base.castShadow = false;
   group.add(base);
 
   // 旗杆顶球
@@ -378,7 +378,7 @@ function createFlagpole() {
   });
   var flag = new THREE.Mesh(flagGeo, flagMat);
   flag.position.set(flagW / 2 + 0.15, poleH - flagH / 2 - 0.3, 0);
-  flag.castShadow = true;
+  flag.castShadow = false;
   group.add(flag);
 
   // 放置在中央广场中心（四块草坪 104-107 的几何中心）

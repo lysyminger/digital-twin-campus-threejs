@@ -59,6 +59,7 @@ function initScene() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate = false;
   renderer.outputEncoding = THREE.sRGBEncoding;
 
   // OrbitControls
@@ -77,7 +78,7 @@ function initScene() {
   sun = new THREE.DirectionalLight(0xffffff, 1.0);
   sun.position.set(150, 220, 100);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(1024, 1024);
   sun.shadow.camera.left   = -500;
   sun.shadow.camera.right  =  500;
   sun.shadow.camera.top    =  500;
