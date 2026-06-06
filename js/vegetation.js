@@ -352,7 +352,7 @@ function createStreetLamp(x, z) {
     new THREE.CylinderGeometry(0.08, 0.1, 4.5, 6),
     new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.7 })
   );
-  pole.position.y = 2.25; pole.castShadow = true;
+  pole.position.y = 2.25; pole.castShadow = false;
   group.add(pole);
 
   var bulbMat = new THREE.MeshStandardMaterial({
@@ -360,16 +360,18 @@ function createStreetLamp(x, z) {
   });
   var head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6), bulbMat);
   head.position.y = 4.6; head.userData.isLampHead = true;
+  head.castShadow = false;
   group.add(head);
 
-  var light = new THREE.PointLight(0xffcc66, 0, 14, 1.6);
-  light.position.y = 4.6;
-  group.add(light);
+  // 移除 PointLight，只保留 emissive 假发光，彻底避免动态光照开销
+  // var light = new THREE.PointLight(0xffcc66, 0, 14, 1.6);
+  // light.position.y = 4.6;
+  // group.add(light);
 
   group.position.set(x, 0, z);
 
   if (typeof streetLamps !== 'undefined') {
-    streetLamps.push({ light: light, bulbMat: bulbMat });
+    streetLamps.push({ light: null, bulbMat: bulbMat });
   }
   return group;
 }
@@ -390,16 +392,16 @@ function createBench(x, z, rot) {
   var metalMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.6 });
 
   var seat = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.08, 0.45), woodMat);
-  seat.position.y = 0.45; seat.castShadow = true;
+  seat.position.y = 0.45; seat.castShadow = false;
   group.add(seat);
 
   var back = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.5, 0.06), woodMat);
-  back.position.set(0, 0.75, -0.2); back.rotation.x = 0.1; back.castShadow = true;
+  back.position.set(0, 0.75, -0.2); back.rotation.x = 0.1; back.castShadow = false;
   group.add(back);
 
   [-0.55, 0.55].forEach(function (lx) {
     var leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 0.35), metalMat);
-    leg.position.set(lx, 0.22, 0); leg.castShadow = true;
+    leg.position.set(lx, 0.22, 0); leg.castShadow = false;
     group.add(leg);
   });
 

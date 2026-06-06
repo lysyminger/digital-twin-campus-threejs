@@ -40,6 +40,7 @@ function bindUI() {
     sw.addEventListener('change', e => {
       const key = e.target.dataset.layer;
       if (layerGroups[key]) layerGroups[key].visible = e.target.checked;
+      if (typeof renderer !== 'undefined' && renderer.shadowMap) renderer.shadowMap.needsUpdate = true;
     });
   });
 

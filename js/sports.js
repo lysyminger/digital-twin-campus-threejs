@@ -125,7 +125,7 @@ function createGrandstand() {
   for (let i = 0; i < 4; i++) {
     const tier = new THREE.Mesh(new THREE.BoxGeometry(3, 1.2, standLength), mat);
     tier.position.set(baseX + 5 - i * 3, 0.6 + i * 1.2, baseZ);
-    tier.castShadow = true;
+    tier.castShadow = false;
     tier.receiveShadow = true;
     group.add(tier);
   }
@@ -134,7 +134,7 @@ function createGrandstand() {
   const roofMat = new THREE.MeshStandardMaterial({ color: 0x556677, roughness: 0.6, metalness: 0.3 });
   const roof = new THREE.Mesh(new THREE.BoxGeometry(12, 0.3, standLength), roofMat);
   roof.position.set(baseX - 2, 5.5, baseZ);
-  roof.castShadow = true;
+  roof.castShadow = false;
   roof.receiveShadow = true;
   group.add(roof);
 
@@ -143,7 +143,7 @@ function createGrandstand() {
   for (let p = -2; p <= 2; p++) {
     const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 5.5, 8), pillarMat);
     pillar.position.set(baseX - 4, 2.75, baseZ + p * 20);
-    pillar.castShadow = true;
+    pillar.castShadow = false;
     group.add(pillar);
   }
 
